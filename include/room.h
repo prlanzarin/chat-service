@@ -1,8 +1,9 @@
 #ifndef __room__
 #define __room__
 
-#include "../include/usr.h"
-#include "../include/list.h"
+typedef struct user USER; // The compiler must be aware of the USER structure
+typedef struct message MESSAGE; // The compiler must be aware of the MESSAGE structure
+typedef struct list LIST; // The compiler must be aware of the LIST structure
 
 size_t ROOM_STRUCT_SIZE = 0;
 

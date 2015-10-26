@@ -4,7 +4,7 @@
 #include <sys/types.h>
 #include "../include/list.h"
 
-#define MAX_SESSION 20
+#define MAX_SESSIONS 20
 #define BACKLOG_CONNECTIONS 4
 #define PORT 4000
 

@@ -4,7 +4,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
-//#include "../include/client.h"
+#include <netdb.h>
+#include "../include/client.h"
 
 /*
 struct sockaddr_in {
@@ -27,14 +28,20 @@ struct sockaddr {
 int main(int argc, char *argv[]) {
 	int socket_descriptor;
 	struct sockaddr_in server;
-	
+	struct hostent *serv_host;
 	// socket creation
 	socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
 	if(socket_descriptor == -1)
 		printf("SOCKET COULD NO BE CREATED!\n");
-	server.sin_addr.s_addr = inet_addr("74.125.235.20");
+	
+	/*server.sin_addr.s_addr = inet_addr("74.125.235.20");
 	server.sin_family = AF_INET;
-	server.sin_port = htons(80);
+	server.sin_port = htons(80);*/
+
+	serv_host = gethostbyname("localhost"); //The "localhost" can be changed to get the name (or IP number) of the host from the command line . This is for testing purposes only
+	server.sin_family = AF_INET;     
+	server.sin_port = htons(PORT);    
+	server.sin_addr = *((struct in_addr *)serv_host->h_addr);
 
 	if(connect(socket_descriptor, (struct sockaddr *)&server, sizeof(server)) < 0) {
 		printf("CONNECTION ERROR\n");

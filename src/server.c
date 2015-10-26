@@ -6,6 +6,9 @@
 #include <netinet/in.h>
 #include <pthread.h> 
 #include "../include/server.h"
+#include "../include/room.h"
+#include "../include/usr.h"
+#include "../include/list.h"
  
 void *connection_handler(void *);
 
@@ -13,19 +16,21 @@ SERVER server;
 
 int main(int argc , char *argv[])
 {
-	int socket_descriptor, new_socket, *new_sock;
-	struct sockaddr_in server, client;
+	int new_socket, *new_sock;
+	//struct sockaddr_in server, client;
+    struct sockaddr_in client;
+	SERVER server;
 	char *message;
 
 	SERVER_init(&server);
 
 	// server stays listening on its socket for new client connections
-	listen(server->socket_descriptor, BACKLOG_CONNECTIONS);
+	listen(server.socket_descriptor, BACKLOG_CONNECTIONS);
 
 	// connection capture
 	puts("Waiting for incoming connections...");
 
-	while((new_socket = accept(socket_descriptor, 
+	while((new_socket = accept(server.socket_descriptor, 
 					(struct sockaddr *) &client, 
 					(socklen_t*) &SOCKADDR_IN_SIZE))) {
 		puts("Connection accepted");
@@ -90,13 +95,13 @@ int SERVER_init(SERVER *server) {
 	
 	/* server socket init */
 	server->server_socket.sin_family = AF_INET;
-	server->server_socket.in_addr.s_addr = INADDR_ANY;
+	server->server_socket.sin_addr.s_addr = INADDR_ANY;
 	// htons is for endian compatibility
-	server->server_socket.in_port = htons(PORT); 
+	server->server_socket.sin_port = htons(PORT); 
 
 	/* server socket binding */
 	if(bind(server->socket_descriptor,
-				(struct sockaddr *)server->server_socket,
+				(struct sockaddr *)(&server->server_socket),
 				sizeof(server->server_socket)) < 0) {
 		fprintf(stderr, "ERROR: could not bind server socket\n");	
 		return -1;

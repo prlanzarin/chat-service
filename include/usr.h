@@ -1,6 +1,11 @@
 #ifndef __usr__
 #define __usr__
 
+#include <stdbool.h>
+
+typedef struct room ROOM; // The compiler must be aware of the ROOM structure
+typedef struct message MESSAGE; // The compiler must be aware of the MESSAGE structure
+
 size_t USER_STRUCT_SIZE = ((3*sizeof(int)) + (16*sizeof(char))); 
 
 /* USER STRUCTURE */
