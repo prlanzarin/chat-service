@@ -7,8 +7,6 @@
 #include <pthread.h> 
 #include "../include/server.h"
 #include "../include/room.h"
-#include "../include/usr.h"
-#include "../include/list.h"
  
 void *connection_handler(void *);
 

@@ -3,7 +3,10 @@
 
 #define PORT 4000
 #define SERVER_HOSTNAME "localhost"
-typedef struct user USER; 
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include "usr.h"
 
 size_t CLIENT_STRUCT_SIZE = 0;
 

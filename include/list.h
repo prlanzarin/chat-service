@@ -1,15 +1,19 @@
 #ifndef __list__
 #define __list__
 
-#include "../include/usr.h"
-#include "../include/room.h"
-#include "../include/client.h"
+#include "usr.h"
+#include "room.h"
+#include "client.h"
 
 /* LINKED LIST OF ANY TYPE (void ptr). PLEASE BE CAUTIOUS! */
 typedef struct list{
         void *node;
         LIST *next;
 } LIST;
+
+void LIST_push(LIST **head, void *new_node, size_t node_size); 
+
+void LIST_remove(LIST **head, LIST *node);
 
 void LIST_add_user(LIST **head, USER *new_user);
 

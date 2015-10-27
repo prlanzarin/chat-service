@@ -1,8 +1,8 @@
 #ifndef __usr__
 #define __usr__
 
-typedef struct room ROOM; 
-typedef struct message MESSAGE; 
+#include "room.h"
+#include "message.h"
 
 size_t USER_STRUCT_SIZE = ((3*sizeof(int)) + (16*sizeof(char))); 
 

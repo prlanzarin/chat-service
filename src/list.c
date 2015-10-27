@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include "../include/list.h"
 
-
 void LIST_push(LIST **head, void *new_node, size_t node_size) {
 	LIST *ptr = (LIST *)malloc(sizeof(LIST));
 
@@ -21,14 +20,14 @@ void LIST_remove(LIST **head, LIST *node) {
 }
 
 void LIST_add_user(LIST **head, USER *new_user) {
-	LIST_add(head, (void) new_user, USER_STRUCT_SIZE);
+	LIST_push(head, (void *) new_user, USER_STRUCT_SIZE);
 }
 
 void LIST_add_room(LIST **head, ROOM *new_room) {
-	LIST_add(head, (void) new_room, ROOM_STRUCT_SIZE);
+	LIST_push(head, (void *) new_room, ROOM_STRUCT_SIZE);
 
 }
 
 void LIST_add_session(LIST **head, CLIENT *new_session) {
-	LIST_add(head, (void) new_session, CLIENT_STRUCT_SIZE);
+	LIST_push(head, (void *) new_session, CLIENT_STRUCT_SIZE);
 }
