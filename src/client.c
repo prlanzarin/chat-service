@@ -25,29 +25,53 @@ struct sockaddr {
 };
 */
 
+struct sockaddr_in server;
+struct hostent *serv_host;
+CLIENT session;
+
 int main(int argc, char *argv[]) {
+
+
 	int socket_descriptor;
 	struct sockaddr_in server;
 	struct hostent *serv_host;
+	CLIENT_new_session(&session, SERVER_HOSTNAME, AF_INET, PORT, NULL);
 	// socket creation
-	socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
-	if(socket_descriptor == -1)
-		printf("SOCKET COULD NO BE CREATED!\n");
-	
-	/*server.sin_addr.s_addr = inet_addr("74.125.235.20");
-	server.sin_family = AF_INET;
-	server.sin_port = htons(80);*/
 
-	serv_host = gethostbyname("localhost"); //The "localhost" can be changed to get the name (or IP number) of the host from the command line . This is for testing purposes only
-	server.sin_family = AF_INET;     
-	server.sin_port = htons(PORT);    
-	server.sin_addr = *((struct in_addr *)serv_host->h_addr);
-
-	if(connect(socket_descriptor, (struct sockaddr *)&server, sizeof(server)) < 0) {
-		printf("CONNECTION ERROR\n");
-		return 1;
-	}
 	printf("CONNECTED\n");
 
 	return 0; 
+}
+
+int CLIENT_new_session(CLIENT *session, char *hostname, short family, 
+		unsigned short port, USER *user) {	
+		
+	/* creates a socket with TCP protocol */
+	session->socket_descriptor = socket(family, SOCK_STREAM, 0);
+	if (session->socket_descriptor == -1) {
+		fprintf(stderr, "ERROR: could not open client socket\n");
+		return -1;
+	}
+	puts("CLIENT SOCKET CREATION OK");
+	
+	session->client_socket.sin_family = family;
+	session->client_socket.sin_addr.s_addr = INADDR_ANY;
+	session->client_socket.sin_port = htons(port); // htons -> endianess
+	
+	/*The "localhost" can be changed to get the name (or IP number) of the
+	 * host from the command line . This is for testing purposes only */
+	serv_host = gethostbyname(hostname); server.sin_family = AF_INET;     
+	server.sin_port = htons(port);    
+	server.sin_addr = *((struct in_addr *)serv_host->h_addr);
+
+	if(connect(session->socket_descriptor, 
+				(struct sockaddr *)&server, 
+				sizeof(server)) < 0) {
+		printf("CONNECTION ERROR\n");
+		return -1;
+	}
+
+	session->user = user;
+	printf("CONNECTED\n");
+	return 0;
 }

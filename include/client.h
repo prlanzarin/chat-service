@@ -2,8 +2,8 @@
 #define __client__
 
 #define PORT 4000
-
-typedef struct user USER; // The compiler must be aware of the USER structure
+#define SERVER_HOSTNAME "localhost"
+typedef struct user USER; 
 
 size_t CLIENT_STRUCT_SIZE = 0;
 
@@ -14,5 +14,6 @@ typedef struct client {
         USER *user;
 } CLIENT;
 
-CLIENT *CLIENT_session_create(USER **user);
+int CLIENT_new_session(CLIENT *session, short family, unsigned short port, 
+                char *hostname, USER *user);
 #endif

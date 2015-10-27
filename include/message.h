@@ -2,8 +2,9 @@
 #define __message__
 
 typedef struct message {
-        USER *who;
-        char *text;
+        int op; // operation ID
+        int who; // session ID
+        char *data; // data buffer to be (de)serialized in spite of 'op'
 } MESSAGE;
 
 

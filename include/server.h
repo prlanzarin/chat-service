@@ -14,12 +14,12 @@ typedef struct server {
         int socket_descriptor;
         struct sockaddr_in server_socket;
         USER *server_admin;
-        LIST *users;
         LIST *rooms;
-        CLIENT client_sessions[MAX_SESSIONS];
+        CLIENT client_sessions[MAX_SESSIONS]; // w/ online users
 } SERVER;
 
-int SERVER_init(SERVER *server);
+int SERVER_new(SERVER *server, short family, unsigned short port, 
+		USER *admin);
 
 int SERVER_new_user();
 

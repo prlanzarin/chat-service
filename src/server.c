@@ -18,11 +18,10 @@ int main(int argc , char *argv[])
 {
 	int new_socket, *new_sock;
 	//struct sockaddr_in server, client;
-    struct sockaddr_in client;
-	SERVER server;
+	struct sockaddr_in client;
 	char *message;
 
-	SERVER_init(&server);
+	SERVER_init(&server, AF_INET, PORT, NULL);
 
 	// server stays listening on its socket for new client connections
 	listen(server.socket_descriptor, BACKLOG_CONNECTIONS);
@@ -35,7 +34,7 @@ int main(int argc , char *argv[])
 					(socklen_t*) &SOCKADDR_IN_SIZE))) {
 		puts("Connection accepted");
 		// reply to the client
-		message = "Hello Client, I have received your connection. And now I will assign a handler for you\n";
+		message = "Hello Client, you'll be handled properly"; 
 		write(new_socket, message, strlen(message));
 		pthread_t sniffer_thread;
 		new_sock = malloc(1);
@@ -83,21 +82,22 @@ void *connection_handler(void *socket_desc)
 	return 0;
 }
 
-int SERVER_init(SERVER *server) {
+int SERVER_new(SERVER *server, short family, unsigned short port, 
+		USER *admin) {
+
 	/* creates a socket with TCP protocol */
-	server->socket_descriptor = socket(AF_INET , SOCK_STREAM , 0);
+	server->socket_descriptor = socket(family, SOCK_STREAM, 0);
 	if (server->socket_descriptor == -1) {
 		fprintf(stderr, "ERROR: could not open server socket\n");
 		return -1;
 	}
-
 	puts("SERVER SOCKET CREATION OK");
 	
 	/* server socket init */
-	server->server_socket.sin_family = AF_INET;
+	server->server_socket.sin_family = family;
 	server->server_socket.sin_addr.s_addr = INADDR_ANY;
 	// htons is for endian compatibility
-	server->server_socket.sin_port = htons(PORT); 
+	server->server_socket.sin_port = htons(port); 
 
 	/* server socket binding */
 	if(bind(server->socket_descriptor,
@@ -107,5 +107,7 @@ int SERVER_init(SERVER *server) {
 		return -1;
 	}
 	puts("SERVER SOCKET BINDING OK");
-
+	
+	server->server_admin = admin;
+	return 0;
 }
