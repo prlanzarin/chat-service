@@ -5,15 +5,12 @@
 #include "../include/client.h"
 #include "../include/session.h"
 
-struct sockaddr_in server;
-struct hostent serv_host;
 SESSION *session;
 
 int main(int argc, char *argv[]) {
 
-	session = SESSION_new(AF_INET, PORT, NULL);
-	SESSION_connect(session, SERVER_HOSTNAME, PORT, &server, 
-			&serv_host);
+	session = SESSION_new(AF_INET, PORT, SERVER_HOSTNAME, PORT, NULL);
+	SESSION_connect(session);
 
 	return 0; 
 }

@@ -12,16 +12,17 @@
 typedef struct session {
         int socket_descriptor;
         struct sockaddr_in client_socket;
+        struct sockaddr_in server;
         pthread_t session_thread;
         int valid;
         USER *user;
 } SESSION;
 
-SESSION *SESSION_new(short family, unsigned short port, USER *user);
+SESSION *SESSION_new(short family, unsigned short port, char *hostname, 
+                unsigned short server_port, USER *user);
 
-int SESSION_set(SESSION *session, short family, unsigned short port, USER *user); 
+int SESSION_set(SESSION *session, short family, unsigned short port, 
+                char *hostname, unsigned short server_port, USER *user); 
 
-int SESSION_connect(SESSION *session, char *hostname,
-                unsigned short server_port, struct sockaddr_in *server_socket, 
-                struct hostent *s_host);
+int SESSION_connect(SESSION *session); 
 #endif

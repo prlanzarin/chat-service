@@ -12,13 +12,17 @@ void *connection_handler(void *);
 int free_session_index(SESSION session_list[]);
 
 SERVER *server;
-int curr_session;
+int curr_session = -1;
 
 int main(int argc , char *argv[])
 {
 	char *message;
+	SESSION *s_ptr;
 
-	server = SERVER_new(AF_INET, PORT, NULL);
+	if((server = SERVER_new(AF_INET, PORT, NULL)) == NULL) {
+		fprintf(stderr, "ERROR: server creation failed.\n");
+		exit(EXIT_FAILURE);
+	}
 	curr_session = free_session_index(server->sessions);	
 
 	// server stays listening on its socket for new client connections
@@ -26,38 +30,38 @@ int main(int argc , char *argv[])
 
 	// connection capture
 	puts("Waiting for incoming connections...");
-
+	s_ptr = &server->sessions[0];
 	while(curr_session != -1 && 
-			(server->sessions[curr_session].socket_descriptor =
+			(s_ptr[curr_session].socket_descriptor =
 			 accept(server->socket_descriptor, 
-				 (struct sockaddr *) &server->sessions[curr_session].client_socket,
+				 (struct sockaddr *) &s_ptr[curr_session].client_socket,
 				 (socklen_t*) &SOCKADDR_IN_SIZE))) {
 		puts("Connection accepted");
-		server->sessions[curr_session].valid = 1;
+		printf("FREE SESSION FOUND: %d\n", curr_session);
+		s_ptr[curr_session].valid = 1;
 		// reply to the client
 		message = "Hello Client, you'll be handled properly"; 
-		write(server->sessions[curr_session].socket_descriptor, 
+		write(s_ptr[curr_session].socket_descriptor, 
 				message, strlen(message));
-		pthread_t sniffer_thread;
 
-		if(pthread_create(&sniffer_thread, NULL, connection_handler, 
-					(void*)&server->sessions[curr_session].socket_descriptor) < 0) {
+		if(pthread_create(&s_ptr[curr_session].session_thread, NULL, 
+					connection_handler, 
+					(void*)&s_ptr[curr_session].socket_descriptor) < 0) {
 			perror("ERROR: new server thread could not be created");
 			return 1;
 		}
 
 		// now join the thread , so that we dont terminate before the thread
-		pthread_join( sniffer_thread , NULL);
+		pthread_join(s_ptr[curr_session].session_thread, NULL);
 		puts("Handler assigned");
 		curr_session = free_session_index(server->sessions);	
 	}
-
 	return 0;
 }
 
 /*
  * This will handle connection for each client
- * */
+ */
 void *connection_handler(void *socket_desc)
 {
 	//Get the socket descriptor
@@ -73,11 +77,13 @@ void *connection_handler(void *socket_desc)
 	write(sock , message , strlen(message));
 
 	//Free the socket pointer
-	free(socket_desc);
-
+	printf("CLOSING %d\n", sock);
 	return 0;
-}
-
+} 
+/*
+ *
+ * Returns the index of the first available (disconnected) session
+ */
 int free_session_index(SESSION session_list[]) {
 	int i = 0;
 	while(session_list[i].valid != 0 && i < MAX_SESSIONS)
@@ -109,14 +115,15 @@ SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
 				(struct sockaddr *)(&server->server_socket),
 				sizeof(server->server_socket)) < 0) {
 		fprintf(stderr, "ERROR: could not bind server socket\n");	
-		return NULL;;
+		return NULL;
 	}
 	puts("SERVER SOCKET BINDING OK");
 
 	server->server_admin = admin;
 	int i;
 	for(i = 0; i < MAX_SESSIONS; i++)
-		SESSION_set(&server->sessions[i], AF_INET, PORT, NULL); 
+		SESSION_set(&server->sessions[i], AF_INET, PORT, SERVER_HOSTNAME,
+				PORT, NULL); 
 
 	return server;
 }
