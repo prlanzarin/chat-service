@@ -3,15 +3,15 @@
 #include <string.h>
 #include "../include/usr.h"
 
-int USER_create(char *name, int password) {
-	return -1;
+USER *USER_create(char *name, int password) {
+	return NULL;
 }
 
 int USER_login(char *name, int password) {
 	return -1;
 }
 
-int USER_logoff(USER *user); {
+int USER_logoff(USER *user) {
 	return -1;
 }
 

@@ -7,39 +7,41 @@
 #include <pthread.h> 
 #include "../include/server.h"
 #include "../include/room.h"
- 
-void *connection_handler(void *);
 
-SERVER server;
+void *connection_handler(void *);
+int free_session_index(SESSION session_list[]);
+
+SERVER *server;
+int curr_session;
 
 int main(int argc , char *argv[])
 {
-	int new_socket, *new_sock;
-	//struct sockaddr_in server, client;
-	struct sockaddr_in client;
 	char *message;
 
-	SERVER_init(&server, AF_INET, PORT, NULL);
+	server = SERVER_new(AF_INET, PORT, NULL);
+	curr_session = free_session_index(server->sessions);	
 
 	// server stays listening on its socket for new client connections
-	listen(server.socket_descriptor, BACKLOG_CONNECTIONS);
+	listen(server->socket_descriptor, BACKLOG_CONNECTIONS);
 
 	// connection capture
 	puts("Waiting for incoming connections...");
 
-	while((new_socket = accept(server.socket_descriptor, 
-					(struct sockaddr *) &client, 
-					(socklen_t*) &SOCKADDR_IN_SIZE))) {
+	while(curr_session != -1 && 
+			(server->sessions[curr_session].socket_descriptor =
+			 accept(server->socket_descriptor, 
+				 (struct sockaddr *) &server->sessions[curr_session].client_socket,
+				 (socklen_t*) &SOCKADDR_IN_SIZE))) {
 		puts("Connection accepted");
+		server->sessions[curr_session].valid = 1;
 		// reply to the client
 		message = "Hello Client, you'll be handled properly"; 
-		write(new_socket, message, strlen(message));
+		write(server->sessions[curr_session].socket_descriptor, 
+				message, strlen(message));
 		pthread_t sniffer_thread;
-		new_sock = malloc(1);
-		*new_sock = new_socket;
 
 		if(pthread_create(&sniffer_thread, NULL, connection_handler, 
-					(void*)new_sock) < 0) {
+					(void*)&server->sessions[curr_session].socket_descriptor) < 0) {
 			perror("ERROR: new server thread could not be created");
 			return 1;
 		}
@@ -47,11 +49,7 @@ int main(int argc , char *argv[])
 		// now join the thread , so that we dont terminate before the thread
 		pthread_join( sniffer_thread , NULL);
 		puts("Handler assigned");
-	}
-
-	if (new_socket < 0) {
-		perror("accept failed");
-		return 1;
+		curr_session = free_session_index(server->sessions);	
 	}
 
 	return 0;
@@ -80,17 +78,26 @@ void *connection_handler(void *socket_desc)
 	return 0;
 }
 
-int SERVER_new(SERVER *server, short family, unsigned short port, 
-		USER *admin) {
+int free_session_index(SESSION session_list[]) {
+	int i = 0;
+	while(session_list[i].valid != 0 && i < MAX_SESSIONS)
+		i++;
+	if(i == MAX_SESSIONS)
+		return -1;
+	return i;
+}
 
+SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
+
+	SERVER *server = (SERVER *) malloc(sizeof(SERVER));
 	/* creates a socket with TCP protocol */
 	server->socket_descriptor = socket(family, SOCK_STREAM, 0);
 	if (server->socket_descriptor == -1) {
 		fprintf(stderr, "ERROR: could not open server socket\n");
-		return -1;
+		return NULL;
 	}
 	puts("SERVER SOCKET CREATION OK");
-	
+
 	/* server socket init */
 	server->server_socket.sin_family = family;
 	server->server_socket.sin_addr.s_addr = INADDR_ANY;
@@ -102,10 +109,14 @@ int SERVER_new(SERVER *server, short family, unsigned short port,
 				(struct sockaddr *)(&server->server_socket),
 				sizeof(server->server_socket)) < 0) {
 		fprintf(stderr, "ERROR: could not bind server socket\n");	
-		return -1;
+		return NULL;;
 	}
 	puts("SERVER SOCKET BINDING OK");
-	
+
 	server->server_admin = admin;
-	return 0;
+	int i;
+	for(i = 0; i < MAX_SESSIONS; i++)
+		SESSION_set(&server->sessions[i], AF_INET, PORT, NULL); 
+
+	return server;
 }

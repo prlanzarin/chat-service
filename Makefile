@@ -12,21 +12,26 @@ EXE =./bin/client ./bin/server
 
 all: client server 
 
-#todo deps
-client: $(SRC_DIR)/client.c *.o 
+client: $(SRC_DIR)/client.c usr.o room.o list.o session.o
 	$(CC) $(DEBUG) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(BIN_DIR)/*.o $(CFLAGS) 
 
-#todo deps	
-server: $(SRC_DIR)/server.c *.o 
+server: $(SRC_DIR)/server.c usr.o room.o list.o session.o
 	$(CC) $(DEBUG) -o $(BIN_DIR)/server $(SRC_DIR)/server.c $(BIN_DIR)/*.o $(CFLAGS) -pthread
+
+session.o: $(INC_DIR)/session.h $(SRC_DIR)/session.c
+	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/session.o $(SRC_DIR)/session.c $(CFLAGS)
 
 usr.o: $(INC_DIR)/usr.h $(SRC_DIR)/usr.c 
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/usr.o $(SRC_DIR)/usr.c $(CFLAGS) 
 
+room.o: $(INC_DIR)/room.h $(SRC_DIR)/room.c 
+	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/room.o $(SRC_DIR)/room.c $(CFLAGS) 
+
 list.o: $(INC_DIR)/list.h $(SRC_DIR)/list.c 
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/list.o $(SRC_DIR)/list.c $(CFLAGS) 
 
-utils.o: $(INC_DIR)/utils.h $(SRC_DIR)/utils.c matrix.o
+# TODO UTILS MODULE
+utils.o: $(INC_DIR)/utils.h $(SRC_DIR)/utils.c
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/utils.o $(SRC_DIR)/utils.c $(CFLAGS) 
 
 clean:

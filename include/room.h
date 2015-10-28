@@ -5,7 +5,7 @@ typedef struct user USER;
 typedef struct message MESSAGE; 
 typedef struct list LIST; 
 
-size_t ROOM_STRUCT_SIZE = 0;
+#define ROOM_STRUCT_SIZE 0
 
 typedef struct room {
         int id;

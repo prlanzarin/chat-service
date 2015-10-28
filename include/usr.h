@@ -4,7 +4,7 @@
 #include "room.h"
 #include "message.h"
 
-size_t USER_STRUCT_SIZE = ((3*sizeof(int)) + (16*sizeof(char))); 
+#define USER_STRUCT_SIZE ((3*sizeof(int)) + (16*sizeof(char)))
 
 /* USER STRUCTURE */
 typedef struct user {

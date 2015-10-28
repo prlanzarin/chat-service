@@ -11,7 +11,6 @@ void LIST_push(LIST **head, void *new_node, size_t node_size) {
 	ptr->next = *head;
 	//memcpy(ptr->node, new_node, node_size);
 	*head =	ptr;
-
 	return;
 }
 
@@ -28,6 +27,6 @@ void LIST_add_room(LIST **head, ROOM *new_room) {
 
 }
 
-void LIST_add_session(LIST **head, CLIENT *new_session) {
-	LIST_push(head, (void *) new_session, CLIENT_STRUCT_SIZE);
+void LIST_add_session(LIST **head, SESSION *new_session) {
+	LIST_push(head, (void *) new_session, SESSION_STRUCT_SIZE);
 }

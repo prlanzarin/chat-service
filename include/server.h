@@ -2,26 +2,24 @@
 #define __server__
 
 #include <sys/types.h>
+#include "usr.h"
+#include "list.h"
+#include "session.h"
 
 #define MAX_SESSIONS 20
 #define BACKLOG_CONNECTIONS 4
-#define PORT 4000
 
-#include "usr.h"
-#include "list.h"
-#include "client.h"
-
-int SOCKADDR_IN_SIZE = sizeof(struct sockaddr_in);
+size_t SOCKADDR_IN_SIZE = sizeof(struct sockaddr_in);
 
 typedef struct server {
         int socket_descriptor;
         struct sockaddr_in server_socket;
         USER *server_admin;
         LIST *rooms;
-        CLIENT client_sessions[MAX_SESSIONS]; // w/ online users
+        SESSION sessions[MAX_SESSIONS]; // w/ online users
 } SERVER;
 
-int SERVER_new(SERVER *server, short family, unsigned short port, 
+SERVER *SERVER_new(short family, unsigned short port, 
 		USER *admin);
 
 int SERVER_new_user();
