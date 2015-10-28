@@ -5,6 +5,7 @@
 #include "usr.h"
 #include "list.h"
 #include "session.h"
+#include "../include/message.h"
 
 #define MAX_SESSIONS 20
 #define BACKLOG_CONNECTIONS 4
