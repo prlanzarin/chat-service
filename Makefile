@@ -12,10 +12,10 @@ EXE =./bin/client ./bin/server
 
 all: client server 
 
-client: $(SRC_DIR)/client.c usr.o room.o list.o session.o
+client: $(SRC_DIR)/client.c usr.o room.o list.o session.o message.o
 	$(CC) $(DEBUG) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(BIN_DIR)/*.o $(CFLAGS) 
 
-server: $(SRC_DIR)/server.c usr.o room.o list.o session.o
+server: $(SRC_DIR)/server.c usr.o room.o list.o session.o message.o
 	$(CC) $(DEBUG) -o $(BIN_DIR)/server $(SRC_DIR)/server.c $(BIN_DIR)/*.o $(CFLAGS) -pthread
 
 session.o: $(INC_DIR)/session.h $(SRC_DIR)/session.c
@@ -26,6 +26,9 @@ usr.o: $(INC_DIR)/usr.h $(SRC_DIR)/usr.c
 
 room.o: $(INC_DIR)/room.h $(SRC_DIR)/room.c 
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/room.o $(SRC_DIR)/room.c $(CFLAGS) 
+
+message.o: $(INC_DIR)/message.h $(SRC_DIR)/message.c
+	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/message.o $(SRC_DIR)/message.c $(CFLAGS)
 
 list.o: $(INC_DIR)/list.h $(SRC_DIR)/list.c 
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/list.o $(SRC_DIR)/list.c $(CFLAGS) 

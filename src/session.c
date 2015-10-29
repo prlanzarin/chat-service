@@ -22,14 +22,7 @@ int SESSION_set(SESSION *session, short family, unsigned short port,
 		char *hostname, unsigned short server_port, USER *user) {
 
 	struct hostent *s_host;
-	/* creates a socket with TCP protocol */
-	session->socket_descriptor = socket(family, SOCK_STREAM, 0);
-	if (session->socket_descriptor == -1) {
-		fprintf(stderr, "ERROR: could not open client socket\n");
-		return -1;
-	}
-	printf("SESSION SOCKET %d WAS OPENED.\n", session->socket_descriptor);
-
+	
 	session->client_socket.sin_family = family;
 	session->client_socket.sin_addr.s_addr = INADDR_ANY;
 	session->client_socket.sin_port = htons(port); // htons -> endianess
@@ -47,6 +40,15 @@ int SESSION_set(SESSION *session, short family, unsigned short port,
 
 
 int SESSION_connect(SESSION *session) {
+
+	session->socket_descriptor = socket(AF_INET, SOCK_STREAM, 0);
+	/* creates a socket with TCP protocol */
+	if (session->socket_descriptor == -1) {
+		fprintf(stderr, "ERROR: could not open client socket\n");
+		return -1;
+	}
+	printf("SESSION SOCKET %d WAS OPENED.\n", session->socket_descriptor);
+
 	if(connect(session->socket_descriptor, 
 				(struct sockaddr *)&session->server,
 				sizeof(session->server)) < 0) {

@@ -31,12 +31,11 @@ int main(int argc , char *argv[])
 	// connection capture
 	puts("Waiting for incoming connections...");
 	s_ptr = &server->sessions[0];
-	while(curr_session != -1 && 
-			(s_ptr[curr_session].socket_descriptor =
-			 accept(server->socket_descriptor, 
-				 (struct sockaddr *) &s_ptr[curr_session].client_socket,
-				 (socklen_t*) &SOCKADDR_IN_SIZE))) {
-		puts("Connection accepted");
+	while(curr_session != -1 && (s_ptr[curr_session].socket_descriptor =
+				accept(server->socket_descriptor, 
+					(struct sockaddr *) &s_ptr[curr_session].client_socket,
+					(socklen_t*) &SOCKADDR_IN_SIZE))) {
+
 		printf("FREE SESSION FOUND: %d\n", curr_session);
 		s_ptr[curr_session].valid = 1;
 		// reply to the client
@@ -48,7 +47,7 @@ int main(int argc , char *argv[])
 					connection_handler, 
 					(void*)&s_ptr[curr_session].socket_descriptor) < 0) {
 			perror("ERROR: new server thread could not be created");
-			return 1;
+			exit(EXIT_FAILURE);
 		}
 
 		// now join the thread , so that we dont terminate before the thread
@@ -71,13 +70,13 @@ void *connection_handler(void *socket_desc)
 
 	//Send some messages to the client
 	message = "Greetings! I am your connection handler\n";
-	write(sock , message , strlen(message));
+	write(sock, message, strlen(message));
 
 	message = "Its my duty to communicate with you";
-	write(sock , message , strlen(message));
+	write(sock, message, strlen(message));
 
 	//Free the socket pointer
-	printf("CLOSING %d\n", sock);
+	printf("CLOSING SESSION %d\n", sock);
 	return 0;
 } 
 /*
@@ -93,6 +92,10 @@ int free_session_index(SESSION session_list[]) {
 	return i;
 }
 
+/* 
+ * Instantiates a new SERVER struct (returns a pointer to it, it must be freed
+ * later
+ */
 SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
 
 	SERVER *server = (SERVER *) malloc(sizeof(SERVER));
