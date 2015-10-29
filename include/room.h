@@ -15,10 +15,10 @@ typedef struct room {
 } ROOM;
 
 // FUNDAMENTAL
-ROOM *ROOM_create(char *name);
+ROOM *ROOM_create(char *name, USER *creator, LIST *rooms); 
 
 // FUNDAMENTAL
-int ROOM_close(int room_id);
+int ROOM_close(int room_id, LIST *rooms);
 
 // FUNDAMENTAL
 int ROOM_broadcast_message(ROOM *room, MESSAGE *msg);

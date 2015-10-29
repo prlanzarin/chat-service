@@ -14,6 +14,7 @@ void LIST_push(LIST **head, void *new_node, size_t node_size) {
 	return;
 }
 
+//REMINDER: Free the allocated node too!
 void LIST_remove(LIST **head, LIST *node) {
 	return;
 }

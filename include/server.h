@@ -19,6 +19,8 @@ typedef struct server {
         SESSION sessions[MAX_SESSIONS]; // w/ online users
 } SERVER;
 
+extern SERVER *server;
+
 SERVER *SERVER_new(short family, unsigned short port, 
 		USER *admin);
 
