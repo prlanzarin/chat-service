@@ -3,6 +3,24 @@
 #include <string.h>
 #include "../include/message.h"
 
+/* non-module subroutines for basic types (de)serialization */
+void char_serialize(char *buffer) {
+	return;
+}
+
+void int_serialize(int *n) {
+	return;
+}
+
+void char_deserialize(char *buffer) {
+	return;
+}
+
+void int_deserialize(int *n) {
+	return;
+}
+
+/* module subroutines for MESSAGE management and (de)serialization */
 MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size) {
 	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
 	new_msg->data = (char *) malloc(sizeof(data_size+1));
