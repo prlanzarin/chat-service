@@ -3,4 +3,6 @@
 
 #include "../include/message.h"
 
+void *read_message();
+
 #endif

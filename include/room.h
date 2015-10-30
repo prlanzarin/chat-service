@@ -14,6 +14,8 @@ typedef struct room {
         LIST *online_users;
 } ROOM;
 
+extern pthread_mutex_t roomMutex;
+
 // FUNDAMENTAL
 ROOM *ROOM_create(char *name, USER *creator, LIST *rooms); 
 

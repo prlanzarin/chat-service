@@ -13,7 +13,7 @@ EXE =./bin/client ./bin/server
 all: client server 
 
 client: $(SRC_DIR)/client.c usr.o room.o list.o session.o message.o
-	$(CC) $(DEBUG) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(BIN_DIR)/*.o $(CFLAGS) 
+	$(CC) $(DEBUG) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(BIN_DIR)/*.o $(CFLAGS) -pthread
 
 server: $(SRC_DIR)/server.c usr.o room.o list.o session.o message.o
 	$(CC) $(DEBUG) -o $(BIN_DIR)/server $(SRC_DIR)/server.c $(BIN_DIR)/*.o $(CFLAGS) -pthread

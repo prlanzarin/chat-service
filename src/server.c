@@ -39,7 +39,7 @@ int main(int argc , char *argv[])
 		printf("FREE SESSION FOUND: %d\n", curr_session);
 		s_ptr[curr_session].valid = 1;
 		// reply to the client
-		message = "Hello Client, you'll be handled properly"; 
+		message = "Hello Client, you'll be handled properly\n"; 
 		write(s_ptr[curr_session].socket_descriptor, 
 				message, strlen(message));
 
@@ -65,6 +65,7 @@ void *connection_handler(void *socket_desc)
 {
 	//Get the socket descriptor
 	int sock = *(int*)socket_desc;
+	char buffer[256];
 
 	char *message;
 
@@ -72,8 +73,14 @@ void *connection_handler(void *socket_desc)
 	message = "Greetings! I am your connection handler\n";
 	write(sock, message, strlen(message));
 
-	message = "Its my duty to communicate with you";
+	message = "Its my duty to communicate with you\n";
 	write(sock, message, strlen(message));
+
+	message = "Type your nickname:\n";
+	write(sock, message, strlen(message));
+
+	if(read(sock, buffer, sizeof(buffer)) > 0)
+		printf ("The chosen nickname is %s\n",buffer);
 
 	//Free the socket pointer
 	printf("CLOSING SESSION %d\n", sock);

@@ -18,6 +18,7 @@ ROOM *ROOM_create(char *name, USER *creator, LIST *rooms) {
 	}
 	else
 	{
+		//TODO: room id
 		strncpy(new->name, name, sizeof(new->name));
 		new->room_admin = &creator;
 		pthread_mutex_lock(&roomMutex);
