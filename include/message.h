@@ -1,12 +1,14 @@
 #ifndef __message__
 #define __message__
 
-typedef struct message {
+struct message {
         int op; // operation ID. It'll define how data will be deserialized
         int who; // session ID
         size_t data_size; // bytes of data field
         char *data; // data buffer to be (de)serialized in spite of 'op'
-} MESSAGE;
+}__atribute__((packed));
+
+typedef struct message MESSAGE; 
 
 MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size);
 
