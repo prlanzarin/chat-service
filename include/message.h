@@ -10,11 +10,26 @@ struct message {
 
 typedef struct message MESSAGE; 
 
+enum chat_ops { 
+        ROOM_CREATION, // TODO ASAP
+        ROOM_DELETION, // TODO ASAP
+        USER_JOIN_ROOM, // TODO ASAP
+        USER_LEAVE_ROOM, // TODO ASAP
+        USER_SEND_MESSAGE_TO_ROOM, // TODO ASAP
+        USER_SEND_PRIVATE_MESSAGE, //TODO  
+        ROOM_ADD_USER, //TODO 
+        ROOM_KICK_USER, //TODO 
+        SESSION_CREATE_USER, //TODO
+        SESSION_USER_LOGIN, //TODO
+        USER_LOGOFF //TODO
+};
+
+
 MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size);
 
-char *MESSAGE_serialize(MESSAGE *msg);
+unsigned char *MESSAGE_serialize(MESSAGE *msg);
 
-MESSAGE *MESSAGE_deserialize(char *msg);
+MESSAGE *MESSAGE_deserialize(unsigned char *msg);
 
 void MESSAGE_destroy(MESSAGE *msg);
 
