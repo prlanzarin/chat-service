@@ -18,33 +18,6 @@
  * USER_LOGOFF (any user) // TODO
  */
 
-/* module subroutines for MESSAGE management and (de)serialization */
-MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size) {
-	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
-	new_msg->data = (char *) malloc(sizeof(data_size+1));
-	memcpy(new_msg->data, data, data_size);
-	free(data);
-	new_msg->op = op;
-	new_msg->who = who;
-	new_msg->data_size = data_size;
-	return new_msg;
-}
-
-char *MESSAGE_serialize(MESSAGE *msg) {
-	
-	return NULL;
-}
-
-MESSAGE *MESSAGE_deserialize(char *msg) {
-	return NULL;
-}
-
-void MESSAGE_destroy(MESSAGE *msg) {
-	free(msg->data);
-	free(msg);	
-	return; 
-}
-
 /* non-module subroutines for basic types (de)serialization */
 
 /* serializes a char into an unsigned buffer (there's no boundary checking
@@ -52,8 +25,8 @@ void MESSAGE_destroy(MESSAGE *msg) {
  */
 unsigned char *char_serialize(unsigned char *buffer, char c) {
 	buffer[0] = c;
-	buffer += 1;	
-	return buffer;
+	buffer += 1;
+	return buffer; 
 }
 
 /* serializes an int into an unsigned buffer (there's no boundary checking
@@ -80,6 +53,85 @@ unsigned char *char_deserialize(char *buffer, char *c) {
  */
 unsigned char int_deserialize(unsigned char *buffer, int *n) {
 	return buffer;
+}
+
+/* module subroutines for MESSAGE management and (de)serialization */
+MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size) {
+	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
+	new_msg->data = (char *) malloc(sizeof(data_size+1));
+	memcpy(new_msg->data, data, data_size);
+	free(data);
+	new_msg->op = op;
+	new_msg->who = who;
+	new_msg->data_size = data_size;
+	return new_msg;
+}
+
+unsigned char *MESSAGE_serialize(MESSAGE *msg) {
+	switch(msg->op) {
+		case ROOM_CREATION: // TODO ASAP
+			break;
+		case ROOM_DELETION:// TODO ASAP
+			break;
+		case USER_JOIN_ROOM: // TODO ASAP
+			break;
+		case USER_LEAVE_ROOM: // TODO ASAP
+			break;
+		case USER_SEND_MESSAGE_TO_ROOM: // TODO ASAP
+			break;
+		case USER_SEND_PRIVATE_MESSAGE: //TODO  
+			break;
+		case ROOM_ADD_USER: //TODO 
+			break;
+		case ROOM_KICK_USER: //TODO 
+			break;
+		case SESSION_CREATE_USER:
+			break;	//TODO
+		case SESSION_USER_LOGIN:
+			break;	//TODO
+		case USER_LOGOFF:
+			break;//TODO
+		default: 
+			return NULL;
+	}
+	return NULL;
+}
+
+MESSAGE *MESSAGE_deserialize(unsigned char *msg) {
+	int op = msg[0];
+	switch(op) {
+		case ROOM_CREATION: // TODO ASAP
+			break;
+		case ROOM_DELETION:// TODO ASAP
+			break;
+		case USER_JOIN_ROOM: // TODO ASAP
+			break;
+		case USER_LEAVE_ROOM: // TODO ASAP
+			break;
+		case USER_SEND_MESSAGE_TO_ROOM: // TODO ASAP
+			break;
+		case USER_SEND_PRIVATE_MESSAGE: //TODO  
+			break;
+		case ROOM_ADD_USER: //TODO 
+			break;
+		case ROOM_KICK_USER: //TODO 
+			break;
+		case SESSION_CREATE_USER:
+			break;	//TODO
+		case SESSION_USER_LOGIN:
+			break;	//TODO
+		case USER_LOGOFF:
+			break;//TODO
+		default: 
+			return NULL;
+	}
+	return NULL;
+}
+
+void MESSAGE_destroy(MESSAGE *msg) {
+	free(msg->data);
+	free(msg);	
+	return; 
 }
 
 
