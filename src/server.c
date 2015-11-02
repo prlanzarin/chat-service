@@ -12,17 +12,30 @@ void *connection_handler(void *);
 int free_session_index(SESSION session_list[]);
 
 SERVER *server;
+pthread_mutex_t roomListMutex = PTHREAD_MUTEX_INITIALIZER;
 int curr_session = -1;
 
 int main(int argc , char *argv[])
 {
 	char *message;
 	SESSION *s_ptr;
+	int i;
+	ROOM testrooms[10];
 
+	
+	
 	if((server = SERVER_new(AF_INET, PORT, NULL)) == NULL) {
 		fprintf(stderr, "ERROR: server creation failed.\n");
 		exit(EXIT_FAILURE);
 	}
+
+	for(i = 0; i < 10; i++)
+	{
+		testrooms[i].name[0] = 'a'+i;
+		testrooms[i].name[1] = '\0';
+		LIST_add_room(&(server->rooms), &testrooms[i]);
+	}
+
 	curr_session = free_session_index(server->sessions);	
 
 	// server stays listening on its socket for new client connections
@@ -50,6 +63,8 @@ int main(int argc , char *argv[])
 			exit(EXIT_FAILURE);
 		}
 
+		
+
 		// now join the thread , so that we dont terminate before the thread
 		pthread_join(s_ptr[curr_session].session_thread, NULL);
 		puts("Handler assigned");
@@ -66,8 +81,10 @@ void *connection_handler(void *socket_desc)
 	//Get the socket descriptor
 	int sock = *(int*)socket_desc;
 	char buffer[256];
+	char clientNickname[MAX_USER_NAME];
 
 	char *message;
+	
 
 	//Send some messages to the client
 	message = "	Greetings! I am your connection handler\n";
@@ -79,8 +96,15 @@ void *connection_handler(void *socket_desc)
 	message = "	Type your nickname:";
 	write(sock, message, strlen(message));
 
+	//Receive the chosen nickname
 	if(read(sock, buffer, sizeof(buffer)) > 0)
 		printf ("	The chosen nickname is %s\n",buffer);
+		
+	//Send the available rooms to the client
+	SERVER_show_rooms(*((int*)socket_desc));
+
+	strncpy(clientNickname,buffer,sizeof(clientNickname));
+	SERVER_process_user_cmd(*((int*)socket_desc), clientNickname);
 
 	//Free the socket pointer
 	printf("CLOSING SESSION %d\n", sock);
@@ -136,4 +160,48 @@ SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
 				PORT, NULL); 
 
 	return server;
+}
+
+
+void SERVER_show_rooms(int socket)
+{
+	int ack;
+	char waitMessage[5] = "wait";
+	char finishMessage[7] = "finish";
+	int waitAck;
+	int finishAck;
+	LIST *rooms = server->rooms;
+	ROOM *room;
+
+	fprintf(stderr, "Sending available rooms to the client %d\n",socket);
+
+	//before showing the rooms, server must inform the listen thread in the client
+	write(socket, waitMessage, strlen(waitMessage));
+	fprintf(stderr, "Sent waitMessage: %s\n", waitMessage);
+	read(socket, &waitAck, sizeof(int));
+	fprintf(stderr, "Received waitAck %d\n", waitAck);
+
+	pthread_mutex_lock(&roomListMutex);
+	while (rooms)
+	{
+		room = (ROOM *) (rooms->node);
+		write(socket, room->name, strlen(room->name));
+		read(socket, &ack, sizeof(int));	
+		fprintf(stderr, "Received roomAck %d\n",ack);
+		rooms = rooms->next;		
+	}
+	pthread_mutex_unlock(&roomListMutex);
+
+	fprintf(stderr, "Finished sending available rooms.\n");
+	fprintf(stderr, "Sending finishMessage: %s\n", finishMessage);
+	write(socket, finishMessage, strlen(finishMessage));
+	read(socket, &finishAck, sizeof(int));
+	fprintf(stderr, "Received finishAck %d\n", finishAck);
+}
+
+void SERVER_process_user_cmd (int socket, char *clientNickname)
+{
+	fprintf(stderr,"Waiting for client %s's commands...\n",clientNickname);
+	while(1) {
+	}
 }

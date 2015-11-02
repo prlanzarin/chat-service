@@ -37,4 +37,8 @@ int SERVER_create_room(USER *user, char *room_name);
 // FUNDAMENTAL
 int SERVER_delete_room(USER *user, int room_id);
 
+void SERVER_show_rooms(int socket);
+
+void SERVER_process_user_cmd (int socket, char *clientNickname);
+
 #endif

@@ -5,11 +5,15 @@
 #include "message.h"
 
 #define USER_STRUCT_SIZE ((3*sizeof(int)) + (16*sizeof(char)))
+#define MAX_USER_INPUT 21
+#define MAX_USER_NAME 16
+#define	MAX_USER_COMMAND 10
+#define MAX_USER_COMMAND_ARG 20
 
 /* USER STRUCTURE */
 typedef struct user {
         int id;
-        char name[16];
+        char name[MAX_USER_NAME];
         int password;
         int online;
 } USER;
