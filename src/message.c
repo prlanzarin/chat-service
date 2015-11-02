@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include "../include/message.h"
 
@@ -41,14 +42,16 @@ unsigned char *int_serialize(unsigned char *buffer, int n) {
 	return buffer;
 }
 
-/* deserializes an unsigner buffer into an char (there's no boundary checking
+/* deserializes an unsigned buffer byte into an char (there's no boundary checking
  * in the buffer, be careful)
  */
-unsigned char *char_deserialize(char *buffer, char *c) {
+unsigned char *char_deserialize(unsigned char *buffer, char *c) {
+	c = buffer[0];
+	buffer += 1;
 	return buffer;
 }
 
-/* deserializes an unsigner buffer into an int (there's no boundary checking
+/* deserializes an unsigned buffer into an int (there's no boundary checking
  * in the buffer, be careful)
  */
 unsigned char int_deserialize(unsigned char *buffer, int *n) {
@@ -56,41 +59,37 @@ unsigned char int_deserialize(unsigned char *buffer, int *n) {
 }
 
 /* module subroutines for MESSAGE management and (de)serialization */
-MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size) {
-	switch(op) {
-		case ROOM_CREATION: // TODO ASAP
-			break;
+MESSAGE *MESSAGE_new(int op, int who, ...) {
+	//size_t data_size;
+	va_list args;
+	va_start(args, who);
+	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
+	new_msg->op = op;
+	new_msg->who = who;
+	switch(new_msg->op) {
+		//TODO STDOUT MUTEX LOCKING
+		case ROOM_CREATION: // ARGS: ROOM NAME
 		case ROOM_DELETION:// TODO ASAP
-			break;
 		case USER_JOIN_ROOM: // TODO ASAP
-			break;
 		case USER_LEAVE_ROOM: // TODO ASAP
-			break;
 		case USER_SEND_MESSAGE_TO_ROOM: // TODO ASAP
+			vprintf(new_msg->data, args);
+			va_end(args);
 			break;
 		case USER_SEND_PRIVATE_MESSAGE: //TODO  
-			break;
 		case ROOM_ADD_USER: //TODO 
-			break;
 		case ROOM_KICK_USER: //TODO 
-			break;
 		case SESSION_CREATE_USER:
-			break;	//TODO
 		case SESSION_USER_LOGIN:
-			break;	//TODO
 		case USER_LOGOFF:
-			break;//TODO
+			printf("TODO: not yet implemented!\n");
+			MESSAGE_destroy(new_msg);
+			return NULL;
 		default: 
+			MESSAGE_destroy(new_msg);
 			return NULL;
 	}
 
-	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
-	new_msg->data = (char *) malloc(sizeof(data_size+1));
-	memcpy(new_msg->data, data, data_size);
-	free(data);
-	new_msg->op = op;
-	new_msg->who = who;
-	new_msg->data_size = data_size;
 	return new_msg;
 }
 
@@ -107,8 +106,14 @@ unsigned char *MESSAGE_serialize(MESSAGE *msg) {
 }
 
 MESSAGE *MESSAGE_deserialize(unsigned char *msg) {
-	int op = msg[0];
-	switch(op) {
+	int op, who;
+	int_deserialize(msg, &op);
+	int_deserialize(msg, &who);
+	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
+	new_msg->op = op;
+	new_msg->who = who;
+
+	switch(new_msg->op) {
 		case ROOM_CREATION: // TODO ASAP
 			break;
 		case ROOM_DELETION:// TODO ASAP

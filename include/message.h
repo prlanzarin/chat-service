@@ -25,7 +25,7 @@ enum chat_ops {
 };
 
 
-MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size);
+MESSAGE *MESSAGE_new(int op, int who, ...);
 
 unsigned char *MESSAGE_serialize(MESSAGE *msg);
 
