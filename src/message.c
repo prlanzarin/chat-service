@@ -57,18 +57,7 @@ unsigned char int_deserialize(unsigned char *buffer, int *n) {
 
 /* module subroutines for MESSAGE management and (de)serialization */
 MESSAGE *MESSAGE_new(int op, int who, char *data, size_t data_size) {
-	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
-	new_msg->data = (char *) malloc(sizeof(data_size+1));
-	memcpy(new_msg->data, data, data_size);
-	free(data);
-	new_msg->op = op;
-	new_msg->who = who;
-	new_msg->data_size = data_size;
-	return new_msg;
-}
-
-unsigned char *MESSAGE_serialize(MESSAGE *msg) {
-	switch(msg->op) {
+	switch(op) {
 		case ROOM_CREATION: // TODO ASAP
 			break;
 		case ROOM_DELETION:// TODO ASAP
@@ -94,7 +83,27 @@ unsigned char *MESSAGE_serialize(MESSAGE *msg) {
 		default: 
 			return NULL;
 	}
-	return NULL;
+
+	MESSAGE *new_msg = (MESSAGE *) malloc(sizeof(MESSAGE));
+	new_msg->data = (char *) malloc(sizeof(data_size+1));
+	memcpy(new_msg->data, data, data_size);
+	free(data);
+	new_msg->op = op;
+	new_msg->who = who;
+	new_msg->data_size = data_size;
+	return new_msg;
+}
+
+unsigned char *MESSAGE_serialize(MESSAGE *msg) {
+	int i = 0;
+	unsigned char *buffer = (unsigned char *) malloc(
+			sizeof(unsigned char) * msg->data_size);
+	buffer = int_serialize(buffer, msg->op);
+	buffer = int_serialize(buffer, msg->who);
+	for(i = 0; i < msg->data_size; i++) {
+		buffer = char_serialize(buffer, msg->data[i]);	
+	}
+	return buffer;
 }
 
 MESSAGE *MESSAGE_deserialize(unsigned char *msg) {
