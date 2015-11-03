@@ -33,6 +33,7 @@ int main(int argc , char *argv[])
 	{
 		testrooms[i].name[0] = 'a'+i;
 		testrooms[i].name[1] = '\0';
+		testrooms[i].online_users = NULL;
 		server->rooms =	LIST_push(server->rooms, &testrooms[i]);
 	}
 
@@ -53,6 +54,7 @@ int main(int argc , char *argv[])
 			printf("FREE SESSION FOUND: %d\n", curr_session);
 		else 
 			break;
+		
 		s_ptr[curr_session].valid = 1;
 		// reply to the client
 		message = "	Hello Client, you'll be handled properly\n"; 
@@ -88,7 +90,6 @@ void *connection_handler(void *in)
 	char *message;
 	USER *newUser;
 	
-
 	//Send some messages to the client
 	message = "	Greetings! I am your connection handler\n";
 	write(sock, message, strlen(message));
@@ -105,6 +106,7 @@ void *connection_handler(void *in)
 
         //Default password, for now.
 	newUser = USER_create(buffer, 0);
+	newUser->online = 1;
 	//Adds the new user to the list
 	SERVER_new_user(sock, newUser); 
 		
@@ -175,9 +177,9 @@ SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
 		SESSION_set(&server->sessions[i], AF_INET, PORT, SERVER_HOSTNAME,
 				PORT, NULL); 
 
-	ROOM *lobby = ROOM_create("Lobby", admin);	
-	server->rooms = LIST_create(lobby);
-	server->users = LIST_create(admin);
+//	ROOM *lobby = ROOM_create("Lobby", admin);	
+	server->rooms = NULL; //LIST_create(lobby);
+	server->users = NULL; //LIST_create(admin);
 
 	return server;
 }
@@ -196,8 +198,8 @@ int SERVER_new_user(int socket_desc, USER *newUser) {
 	{
 		check = &(server->sessions[i]);
 		//Associate the new user with its session
-		if(check->socket_descriptor == socket_desc)
-		{
+		if(check->socket_descriptor == socket_desc &&
+				check->valid == 1) {
 			check->user = newUser; 
 			break;
 		}
@@ -262,15 +264,12 @@ SESSION *SERVER_get_session_by_user(char *userName)
 	for (i = 0; i < MAX_SESSIONS; i++)
 	{
 		check = &(server->sessions[i]);
-		if(check->valid) {
-			if(!strncmp(check->user->name, userName, MAX_USER_NAME))
-			{
-				pthread_mutex_unlock(&userListMutex);
-				return check;
-			}
+		
+		if(!strncmp(check->user->name, userName, MAX_USER_NAME)) {
+			pthread_mutex_unlock(&userListMutex);
+			return check;
 		}
-		else
-			break;
+
 	}
 	pthread_mutex_unlock(&userListMutex);
 	return NULL;
@@ -352,14 +351,14 @@ void send_message(ROOM *room, char *message)
 {
 	LIST *users = room->online_users;
 	SESSION *session;
-	USER *user = (USER *) (users->node);
+	USER *user;
 	pthread_mutex_lock(&roomListMutex);
-	while (users != NULL)
+	while(users)
 	{
+		user = (USER *) (users->node);
 		session = SERVER_get_session_by_user(user->name);
 		write(session->socket_descriptor, message, strlen(message));
 		users = users->next; 
-		user = (USER *) (users->node);
 	}
 	pthread_mutex_unlock(&roomListMutex);
 }

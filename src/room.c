@@ -21,6 +21,7 @@ ROOM *ROOM_create(char *name, USER *creator) {
 		//TODO: room id
 		strncpy(new->name, name, sizeof(new->name));
 		new->room_admin = creator;
+		new->online_users = NULL;
 		pthread_mutex_lock(&roomMutex);		
 		pthread_mutex_unlock(&roomMutex);
 		return new;

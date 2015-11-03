@@ -13,6 +13,12 @@ LIST *LIST_create(void *new_node) {
 
 LIST *LIST_push(LIST *head, void *new_node) {
 	LIST *node = LIST_create(new_node);	
+	if(head == NULL) {
+		head = node;
+		head->next = NULL;	
+		puts("YAWZA!\n");
+		return head;
+	}
 	node->next = head;
 	return node;
 }
