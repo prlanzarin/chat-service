@@ -69,7 +69,7 @@ int main(int argc , char *argv[])
 		}
 
 		// now join the thread , so that we dont terminate before the thread
-		pthread_join(s_ptr[curr_session].session_thread, NULL);
+		//pthread_join(s_ptr[curr_session].session_thread, NULL);
 		puts("Handler assigned");
 		curr_session = free_session_index(server->sessions);	
 	}
@@ -351,7 +351,7 @@ void send_message(ROOM *room, char *message)
 {
 	LIST *users = room->online_users;
 	SESSION *session;
-	USER *user;
+	USER *user = (USER *) (users->node);
 	pthread_mutex_lock(&roomListMutex);
 	while(users)
 	{
@@ -404,6 +404,8 @@ void SERVER_process_user_cmd (int socket, char *userName)
 		
 		send_message(targetRoom, "olá");
 		fprintf(stderr, "depois do send:\n");
+		SERVER_process_user_cmd(socket, userName);
+
 		/*fprintf(stderr, "Server: userName antes da strcpy: %s\n", userName);
 		//warns the other clients in the room that a new client has joined
 		strcpy(hasJoinedMessage, userName);
