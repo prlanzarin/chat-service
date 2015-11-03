@@ -380,95 +380,113 @@ void SERVER_process_user_cmd (int socket, char *userName)
 	char *selectedRoom = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char *roomName = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char *newUserName = malloc(sizeof(char)*MAX_USER_NAME);
-	int canCreateRoom;
-	int canEnterRoom;
-	ROOM *targetRoom;
+	char *hasJoinedMessage = malloc(sizeof(char)*(MAX_USER_NAME + 22));
+	int canCreateRoom, canEnterRoom, QUIT = 0, IN_ROOM = 0;
+	ROOM *targetRoom = NULL;
 	USER *targetUser;
 
 	memset(userInput, 0, MAX_USER_INPUT);
 
-	//reads the user input
-	fprintf(stderr,"Waiting for client %s's commands...\n",userName);
-	read(socket, userInput, MAX_USER_INPUT);
-	fprintf(stderr, "userInput: %s\n", userInput);
-	strtok(userInput, " ");
-	fprintf(stderr, "userInput depois do strtok: %s\n", userInput);
+	targetUser = SERVER_get_user_by_name(userName);
 
-	fprintf(stderr, "Server: userName antes de verificar o userInput: %s\n", userName);
+	while(!QUIT) {
+		//reads the user input
+		fprintf(stderr,"Waiting for client %s's commands...\n",userName);
+		read(socket, userInput, MAX_USER_INPUT);
+		fprintf(stderr, "userInput: %s\n", userInput);
+		strtok(userInput, " ");
+		fprintf(stderr, "userInput depois do strtok: %s\n", userInput);
 
-	if (!strcmp(userInput, "\\join"))
-	{
-		selectedRoom = strtok(NULL, " ");
+		fprintf(stderr, "Server: userName antes de verificar o userInput: %s\n", userName);
 
-		//waits for the client to choose the room
-		fprintf(stderr, "User %s wants to join room %s.\n", userName, selectedRoom);
-		targetRoom = SERVER_get_room_by_name(selectedRoom);
-		targetUser = SERVER_get_user_by_name(userName);
-		if (targetRoom == NULL)		
-			canEnterRoom = 0;
-		else
-			canEnterRoom = 1;			
-		write(socket, &canEnterRoom, sizeof(int));
-		
-		//Adds the user to the specified room
-		ROOM_add_user(targetRoom, targetUser);
-		
-		send_message(targetRoom, "olá");
-		fprintf(stderr, "depois do send:\n");
-		SERVER_process_user_cmd(socket, userName);
-
-		/*fprintf(stderr, "Server: userName antes da strcpy: %s\n", userName);
-		//warns the other clients in the room that a new client has joined
-		strcpy(hasJoinedMessage, userName);
-		strcat(hasJoinedMessage, " has joined the room.");
-		writeToRoom(hasJoinedMessage, roomIndex, socket);
-
-		fprintf(stderr, "Server: listenToMsgs will receive userName %s\n", userName);
-		//server listens to msgs in the chat
-		listenToMsgs(userName, roomIndex, socket);*/
-	}
-	else if (!strcmp(userInput, "\\quit"))
-	{
-		close(socket);
-			
-	}
-	else if (!strcmp(userInput, "\\nick"))
-	{
-		newUserName = strtok(NULL, " ");
-		fprintf(stderr, "Server: Client wants to change his name to %s\n", newUserName);
-		SERVER_change_user_name(userName, newUserName);
-		fprintf(stderr, "Server: nome do cliente apos changeuserName: %s\n", newUserName);
-		SERVER_show_rooms(socket);
-		//checkUserInputFromOutside(socket, newuserName);
-	}
-	else if (!strcmp(userInput, "\\create"))
-	{
-		roomName = strtok(NULL, " ");
-		fprintf(stderr, "User %s wants to create room %s\n", userName, roomName);
-
-		if(SERVER_checkRoomExists(roomName)) {
-			fprintf(stderr, "ERROR: Room with name %s already exists!\n", roomName);
-			canCreateRoom = 0;
-			write(socket, &canCreateRoom, sizeof(int));			
-		}
-		else if (roomName == NULL)
+		if (!strcmp(userInput, "\\join"))
 		{
-			fprintf(stderr, "ERROR: Attempt to create nameless room!\n");
-			canCreateRoom = 0;
-			write(socket, &canCreateRoom, sizeof(int));			
+			selectedRoom = strtok(NULL, " ");
+
+			//waits for the client to choose the room
+			fprintf(stderr, "User %s wants to join room %s.\n", userName, selectedRoom);
+			targetRoom = SERVER_get_room_by_name(selectedRoom);
+			if (targetRoom == NULL)		
+				canEnterRoom = 0;
+			else
+				canEnterRoom = 1;			
+			write(socket, &canEnterRoom, sizeof(int));
+
+			//Adds the user to the specified room
+			ROOM_add_user(targetRoom, targetUser);
+
+			send_message(targetRoom, "olá");
+			fprintf(stderr, "depois do send:\n");
+
+			fprintf(stderr, "Server: userName antes da strcpy: %s\n", userName);
+			//warns the other clients in the room that a new client has joined
+			strcpy(hasJoinedMessage, userName);
+			strcat(hasJoinedMessage, " has joined the room.");
+
+			IN_ROOM = 1;
+			break; /* MOVE DOWN WHEN DONE */	
+			//writeToRoom(hasJoinedMessage, roomIndex, socket);
+
+			fprintf(stderr, "Server: listenToMsgs will receive userName %s\n", userName);
+			//server listens to msgs in the chat
+			//listenToMsgs(userName, roomIndex, socket);
+
+		}
+		else if (!strcmp(userInput, "\\quit"))
+		{
+			QUIT = 1;
+			close(socket);
+
+		}
+		else if (!strcmp(userInput, "\\leave"))
+		{
+			if(IN_ROOM || targetRoom == NULL)
+				break;
+
+			IN_ROOM = 0;
+			ROOM_kick_user(targetRoom, targetUser);
+			SERVER_show_rooms(socket);
+			break;
+		}
+		else if (!strcmp(userInput, "\\nick"))
+		{
+			newUserName = strtok(NULL, " ");
+			fprintf(stderr, "Server: Client wants to change his name to %s\n", newUserName);
+			SERVER_change_user_name(userName, newUserName);
+			fprintf(stderr, "Server: nome do cliente apos changeuserName: %s\n", newUserName);
+			SERVER_show_rooms(socket);
+			break;
+			//checkUserInputFromOutside(socket, newuserName);
+		}
+		else if (!strcmp(userInput, "\\create"))
+		{
+			roomName = strtok(NULL, " ");
+			fprintf(stderr, "User %s wants to create room %s\n", userName, roomName);
+
+			if(SERVER_checkRoomExists(roomName)) {
+				fprintf(stderr, "ERROR: Room with name %s already exists!\n", roomName);
+				canCreateRoom = 0;
+				write(socket, &canCreateRoom, sizeof(int));			
+			}
+			else if (roomName == NULL)
+			{
+				fprintf(stderr, "ERROR: Attempt to create nameless room!\n");
+				canCreateRoom = 0;
+				write(socket, &canCreateRoom, sizeof(int));			
+			}
+			else {
+				fprintf(stderr, "Room with name %s will be created.\n", roomName);
+				canCreateRoom = 1;
+				write(socket, &canCreateRoom, sizeof(int));
+				SERVER_create_room(SERVER_get_user_by_name(userName), roomName);			
+			}
+			SERVER_show_rooms(socket);
+			break;
 		}
 		else {
-			fprintf(stderr, "Room with name %s will be created.\n", roomName);
-			canCreateRoom = 1;
-			write(socket, &canCreateRoom, sizeof(int));
-			SERVER_create_room(SERVER_get_user_by_name(userName), roomName);			
-		}
-		SERVER_show_rooms(socket);
-		SERVER_process_user_cmd(socket, userName);
-	}
-	else {
-		SERVER_show_rooms(socket);
-		SERVER_process_user_cmd(socket, userName);
-	}	
+			SERVER_show_rooms(socket);
+			break;
+		}	
 
+	}
 }

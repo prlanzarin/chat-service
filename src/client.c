@@ -252,6 +252,10 @@ void chooseRoom() {
 				if(!strcmp(buffer,"wait"))
 					fprintf(stderr,"Received wait message.\n");
 		}
+		else if (!strcmp(userCommand, "\\nick"))
+		{
+			read_message();
+		}
 		else {
 			clear_last_line();
 			clear_command_input();
