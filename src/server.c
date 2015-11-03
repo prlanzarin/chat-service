@@ -363,12 +363,23 @@ void send_message(ROOM *room, char *message)
 	pthread_mutex_unlock(&roomListMutex);
 }
 
+int SERVER_change_user_name(char *user_name, char *new_name) {
+	USER *user = SERVER_get_user_by_name(user_name);	
+	/* guess we dont need a mutex here */
+	if(user == NULL)
+		return -1;	
+
+	strncpy(user->name, new_name, MAX_USER_NAME);
+	return 0;
+}
+
 void SERVER_process_user_cmd (int socket, char *userName)
 {
-	
+	/* gotta free those on end */	
 	char *userInput = malloc(sizeof(char)*MAX_USER_INPUT);
 	char *selectedRoom = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char *roomName = malloc(sizeof(char)*MAX_ROOM_NAME);
+	char *newUserName = malloc(sizeof(char)*MAX_USER_NAME);
 	int canCreateRoom;
 	int canEnterRoom;
 	ROOM *targetRoom;
@@ -423,12 +434,12 @@ void SERVER_process_user_cmd (int socket, char *userName)
 	}
 	else if (!strcmp(userInput, "\\nick"))
 	{
-		/*newuserName = strtok(NULL, " ");
-		fprintf(stderr, "Server: Client wants to change his name to %s\n", newuserName);
-		changeuserName(userName, newuserName);
-		fprintf(stderr, "Server: nome do cliente apos changeuserName: %s\n", newuserName);
-		showRooms(socket);
-		checkUserInputFromOutside(socket, newuserName);*/
+		newUserName = strtok(NULL, " ");
+		fprintf(stderr, "Server: Client wants to change his name to %s\n", newUserName);
+		SERVER_change_user_name(userName, newUserName);
+		fprintf(stderr, "Server: nome do cliente apos changeuserName: %s\n", newUserName);
+		SERVER_show_rooms(socket);
+		//checkUserInputFromOutside(socket, newuserName);
 	}
 	else if (!strcmp(userInput, "\\create"))
 	{

@@ -40,6 +40,8 @@ int SERVER_delete_room(USER *user, int room_id);
 
 void SERVER_show_rooms(int socket);
 
+int SERVER_change_user_name(char *user_name, char *new_name);
+
 void SERVER_process_user_cmd (int socket, char *userName);
 
 int SERVER_checkRoomExists (char *roomName);
