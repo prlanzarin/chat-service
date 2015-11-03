@@ -14,6 +14,7 @@ int free_session_index(SESSION session_list[]);
 SERVER *server;
 pthread_mutex_t roomListMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t userListMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t sessionAssignMutex = PTHREAD_MUTEX_INITIALIZER;
 int curr_session = -1;
 
 int main(int argc , char *argv[])
@@ -32,7 +33,7 @@ int main(int argc , char *argv[])
 	{
 		testrooms[i].name[0] = 'a'+i;
 		testrooms[i].name[1] = '\0';
-		LIST_add_room(&(server->rooms), &testrooms[i]);
+		server->rooms =	LIST_push(server->rooms, &testrooms[i]);
 	}
 
 	curr_session = free_session_index(server->sessions);	
@@ -43,12 +44,15 @@ int main(int argc , char *argv[])
 	// connection capture
 	puts("Waiting for incoming connections...");
 	s_ptr = &server->sessions[0];
-	while(curr_session != -1 && (s_ptr[curr_session].socket_descriptor =
+	while((s_ptr[curr_session].socket_descriptor =
 				accept(server->socket_descriptor, 
 					(struct sockaddr *) &s_ptr[curr_session].client_socket,
 					(socklen_t*) &SOCKADDR_IN_SIZE))) {
 
-		printf("FREE SESSION FOUND: %d\n", curr_session);
+		if(curr_session != -1) 
+			printf("FREE SESSION FOUND: %d\n", curr_session);
+		else 
+			break;
 		s_ptr[curr_session].valid = 1;
 		// reply to the client
 		message = "	Hello Client, you'll be handled properly\n"; 
@@ -57,12 +61,10 @@ int main(int argc , char *argv[])
 
 		if(pthread_create(&s_ptr[curr_session].session_thread, NULL, 
 					connection_handler, 
-					(void*)&s_ptr[curr_session].socket_descriptor) < 0) {
+					(void*)&s_ptr[curr_session]) < 0) {
 			perror("ERROR: new server thread could not be created");
 			exit(EXIT_FAILURE);
 		}
-
-		
 
 		// now join the thread , so that we dont terminate before the thread
 		pthread_join(s_ptr[curr_session].session_thread, NULL);
@@ -75,10 +77,11 @@ int main(int argc , char *argv[])
 /*
  * This will handle connection for each client
  */
-void *connection_handler(void *socket_desc)
+void *connection_handler(void *in)
 {
 	//Get the socket descriptor
-	int sock = *(int*)socket_desc;
+	SESSION *session = (SESSION *)in;
+	int sock = session->socket_descriptor;
 	char buffer[256];
 	char userName[MAX_USER_NAME];
 
@@ -103,16 +106,19 @@ void *connection_handler(void *socket_desc)
         //Default password, for now.
 	newUser = USER_create(buffer, 0);
 	//Adds the new user to the list
-	SERVER_new_user(*((int*)socket_desc), newUser); 
+	SERVER_new_user(sock, newUser); 
 		
 	//Send the available rooms to the client
-	SERVER_show_rooms(*((int*)socket_desc));
+	SERVER_show_rooms(sock);
 
 	strncpy(userName,buffer,sizeof(userName));
-	SERVER_process_user_cmd(*((int*)socket_desc), userName);
+	SERVER_process_user_cmd(sock, userName);
 
 	//Free the socket pointer
+	pthread_mutex_lock(&sessionAssignMutex);
 	printf("CLOSING SESSION %d\n", sock);
+	session->valid = 0;
+	pthread_mutex_unlock(&sessionAssignMutex);
 	return 0;
 } 
 /*
@@ -169,11 +175,14 @@ SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
 		SESSION_set(&server->sessions[i], AF_INET, PORT, SERVER_HOSTNAME,
 				PORT, NULL); 
 
+	ROOM *lobby = ROOM_create("Lobby", admin);	
+	server->rooms = LIST_create(lobby);
+	server->users = LIST_create(admin);
+
 	return server;
 }
 
-int SERVER_new_user(int socket_desc, USER *newUser)
-{
+int SERVER_new_user(int socket_desc, USER *newUser) {
 	int i;	
 	SESSION *check;
 	if (newUser == NULL)
@@ -182,7 +191,7 @@ int SERVER_new_user(int socket_desc, USER *newUser)
 		return -1;
 	}
 	pthread_mutex_lock(&userListMutex);
-	LIST_add_user(&(server->users), newUser);
+	server->users = LIST_push(server->users, newUser);
 	for (i = 0; i < MAX_SESSIONS; i++)
 	{
 		check = &(server->sessions[i]);
@@ -194,6 +203,7 @@ int SERVER_new_user(int socket_desc, USER *newUser)
 		}
 	}
 	pthread_mutex_unlock(&userListMutex);
+	return 1;
 }
 
 USER *SERVER_get_user_by_name(char *userName)
@@ -252,11 +262,15 @@ SESSION *SERVER_get_session_by_user(char *userName)
 	for (i = 0; i < MAX_SESSIONS; i++)
 	{
 		check = &(server->sessions[i]);
-		if(!strcmp(check->user->name, userName))
-		{
-			pthread_mutex_unlock(&userListMutex);
-			return check;
+		if(check->valid) {
+			if(!strncmp(check->user->name, userName, MAX_USER_NAME))
+			{
+				pthread_mutex_unlock(&userListMutex);
+				return check;
+			}
 		}
+		else
+			break;
 	}
 	pthread_mutex_unlock(&userListMutex);
 	return NULL;
@@ -268,7 +282,7 @@ int SERVER_create_room(USER *user, char *room_name)
 	pthread_mutex_lock(&roomListMutex);
 	if (newRoom != NULL)
 	{
-		LIST_add_room(&(server->rooms), newRoom);
+		server->rooms = LIST_push(server->rooms, newRoom);
 		pthread_mutex_unlock(&roomListMutex);
 		return 1;
 	}
@@ -303,7 +317,7 @@ void SERVER_show_rooms(int socket)
 	while (rooms)
 	{
 		room = (ROOM *) (rooms->node);
-		write(socket, room->name, strlen(room->name));
+		write(socket, room->name, strnlen(room->name, MAX_ROOM_NAME));
 		read(socket, &ack, sizeof(int));	
 		fprintf(stderr, "Received roomAck %d\n",ack);
 		rooms = rooms->next;		
@@ -340,7 +354,7 @@ void send_message(ROOM *room, char *message)
 	SESSION *session;
 	USER *user = (USER *) (users->node);
 	pthread_mutex_lock(&roomListMutex);
-	while (users)
+	while (users != NULL)
 	{
 		session = SERVER_get_session_by_user(user->name);
 		write(session->socket_descriptor, message, strlen(message));
@@ -360,7 +374,6 @@ void SERVER_process_user_cmd (int socket, char *userName)
 	int canEnterRoom;
 	ROOM *targetRoom;
 	USER *targetUser;
-	char *message;
 
 	memset(userInput, 0, MAX_USER_INPUT);
 
@@ -386,7 +399,6 @@ void SERVER_process_user_cmd (int socket, char *userName)
 		else
 			canEnterRoom = 1;			
 		write(socket, &canEnterRoom, sizeof(int));
-		
 		
 		//Adds the user to the specified room
 		ROOM_add_user(targetRoom, targetUser);

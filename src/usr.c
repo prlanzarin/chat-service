@@ -34,7 +34,7 @@ int USER_logoff(USER *user) {
 //FUNDAMENTAL
 int USER_join_room(USER *user, ROOM *room) {
 	pthread_mutex_lock(&roomMutex);
-	LIST_add_user (&(room->online_users), user);
+	room->online_users = LIST_push(room->online_users, user);
 	pthread_mutex_unlock(&roomMutex);
 	return -1;
 }
@@ -42,7 +42,7 @@ int USER_join_room(USER *user, ROOM *room) {
 //FUNDAMENTAL
 int USER_leave_room(USER *user, ROOM *room) {
 	pthread_mutex_lock(&roomMutex);
-	LIST_remove (&(room->online_users), (LIST *) user);
+	LIST_remove((room->online_users), (LIST *) user);
 	pthread_mutex_unlock(&roomMutex);
 	return -1;
 }

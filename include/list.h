@@ -11,14 +11,10 @@ typedef struct list{
         struct list *next;
 } LIST;
 
-void LIST_push(LIST **head, void *new_node, size_t node_size); 
+LIST *LIST_create(void *new_node);
 
-void LIST_remove(LIST **head, LIST *node);
+LIST *LIST_push(LIST *head, void *new_node); 
 
-void LIST_add_user(LIST **head, USER *new_user);
-
-void LIST_add_room(LIST **head, ROOM *new_room);
-
-void LIST_add_session(LIST **head, SESSION *new_session);
+int LIST_remove(LIST *head, LIST *node);
 
 #endif

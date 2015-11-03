@@ -24,12 +24,19 @@ enum chat_ops {
         USER_LOGOFF //TODO
 };
 
+unsigned char *char_serialize(unsigned char *buffer, char c);
 
-MESSAGE *MESSAGE_new(int op, int who, ...);
+unsigned char *int_serialize(unsigned char *buffer, int n);
+
+unsigned char *char_deserialize(unsigned char *buffer, char *c);
+
+unsigned char *int_deserialize(unsigned char *buffer, int *n);
+
+MESSAGE *MESSAGE_new(int op, int who, size_t data_size, ...);
 
 unsigned char *MESSAGE_serialize(MESSAGE *msg);
 
-MESSAGE *MESSAGE_deserialize(unsigned char *msg);
+MESSAGE *MESSAGE_deserialize(unsigned char *msg_buf);
 
 void MESSAGE_destroy(MESSAGE *msg);
 

@@ -20,7 +20,7 @@ ROOM *ROOM_create(char *name, USER *creator) {
 	{
 		//TODO: room id
 		strncpy(new->name, name, sizeof(new->name));
-		new->room_admin = &creator;
+		new->room_admin = creator;
 		pthread_mutex_lock(&roomMutex);		
 		pthread_mutex_unlock(&roomMutex);
 		return new;
@@ -37,7 +37,7 @@ int ROOM_close(int room_id, LIST *rooms) {
 		if (checkRoom->id == room_id)
 		{
 			pthread_mutex_lock(&roomMutex);
-			LIST_remove (&rooms, checkList);
+			LIST_remove(rooms, checkList);
 			pthread_mutex_unlock(&roomMutex);
 			return 1;
 		}
@@ -54,15 +54,15 @@ int ROOM_broadcast_message(ROOM *room, MESSAGE *msg) {
 // TODO 
 int ROOM_kick_user(ROOM *room, USER *user) {
 	pthread_mutex_lock(&roomMutex);
-	LIST_remove (&(room->online_users), (LIST *) user);
+	LIST_remove((room->online_users), (LIST *) user);
 	pthread_mutex_unlock(&roomMutex);
 	return -1;
 }
 
-// TODO 
-int ROOM_add_user(ROOM *room, USER *user) {
+void ROOM_add_user(ROOM *room, USER *user) {
 	pthread_mutex_lock(&roomMutex);
-	LIST_add_user (&(room->online_users), user);
+	room->online_users = LIST_push(room->online_users, user);
+	printf("USER JOINED ROOM\n");
 	pthread_mutex_unlock(&roomMutex);
-	return -1;
+	return;
 }
