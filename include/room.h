@@ -18,7 +18,7 @@ typedef struct room {
 extern pthread_mutex_t roomMutex;
 
 // FUNDAMENTAL
-ROOM *ROOM_create(char *name, USER *creator, LIST *rooms); 
+ROOM *ROOM_create(char *name, USER *creator); 
 
 // FUNDAMENTAL
 int ROOM_close(int room_id, LIST *rooms);

@@ -20,7 +20,9 @@
 SESSION *session;
 int maxx, maxy; //screen dimensions
 int welcomeRow = WELCOME_ROW;
+int chatRow = CHAT_OUTPUT_ROW;
 pthread_mutex_t scrMutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t chatMutex = PTHREAD_MUTEX_INITIALIZER;
 WINDOW *welcome;
 WINDOW *top;
 WINDOW *bottom;
@@ -84,6 +86,8 @@ void drawChat() {
     pthread_mutex_unlock(&scrMutex);
 }
 
+
+
 void *read_message()
 {
 	int finish = 0;
@@ -127,7 +131,7 @@ void getAvailableRooms()
 	int waitAck = 10;
 	int finishAck = 11;
 	int r;
-		
+	
 	write(session->socket_descriptor, &waitAck, sizeof(int));
 	while(finish == 0)
 	{
@@ -162,7 +166,10 @@ void chooseRoom() {
 	int choosingRoom;	
 	char *selectedRoom = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char userInput[MAX_USER_INPUT];
-	char *userCommand = malloc(sizeof(char)*10);	
+	char *userCommand = malloc(sizeof(char)*MAX_USER_COMMAND);
+	char buffer[256];	
+	int canCreateRoom;
+	int canEnterRoom;
 
 	choosingRoom = 1;
 
@@ -181,46 +188,89 @@ void chooseRoom() {
 		wrefresh(welcome);
 		mvwprintw(welcome, welcomeRow+1, 2, "Available rooms:");
 		wrefresh(welcome);
-		pthread_mutex_unlock(&scrMutex);		
-		
+		pthread_mutex_unlock(&scrMutex);	
 		getAvailableRooms();			
 
 		memset(userInput, 0, MAX_USER_INPUT);
-		memset(userCommand, 0, 10);	
+		memset(userCommand, 0, MAX_USER_COMMAND);	
 
 		//gets the whole user input <command> + <arguments>
 		mvwgetnstr(welcome, welcomeRow, 45, userInput, MAX_USER_INPUT);
 
 		//sends the whole input to the server
 		write(session->socket_descriptor, userInput, strlen(userInput));	
-		
 		//gets only the command from the input
 		userCommand = strtok(userInput, " ");
 
-
+		
 		if (!strcmp(userCommand, "\\join"))
 		{			
+			read(session->socket_descriptor, &canEnterRoom, sizeof(int));
+			selectedRoom = strtok(NULL, " ");
+			if(canEnterRoom == 1)
+			{
+				choosingRoom = 0;
+				drawChat();
+				listenToMsgs();
+				//pthread_create(&listenThread, NULL, listenToMsgs, NULL);	
+			}
+			else
+			{
+				clear_last_line();
+				clear_command_input();
+				pthread_mutex_lock(&scrMutex);	
+				mvwprintw(welcome, 22, 2, "Room %s doesn't exist. Try another one", selectedRoom);
+				wrefresh(welcome);			
+				pthread_mutex_unlock(&scrMutex);
 			
+				//The command is invalid. Wait until the server refreshes the rooms list.
+				if(read(session->socket_descriptor, buffer, sizeof(buffer)) > 0)
+					if(!strcmp(buffer,"wait"))
+						fprintf(stderr,"Received wait message.\n");
+			}
 		}
 		else if (!strcmp(userCommand, "\\quit")) 
 		{
+			endwin();			
+			close(session->socket_descriptor);
+			choosingRoom = 0;	
 		}
 		else if (!strcmp(userCommand, "\\create"))
 		{
-			
+			//Server responds if the room can be created
+			read(session->socket_descriptor, &canCreateRoom, sizeof(int));
+			clear_last_line();
+			clear_command_input();
+			pthread_mutex_lock(&scrMutex);
+			if (!canCreateRoom)
+				mvwprintw(welcome, 22, 2, "There was a problem creating the room %s.");
+			else			
+				mvwprintw(welcome, 22, 2, "Room %s created.", strtok(NULL, " "));
+			wrefresh(welcome);
+			pthread_mutex_unlock(&scrMutex);
+			if(read(session->socket_descriptor, buffer, sizeof(buffer)) > 0)
+				if(!strcmp(buffer,"wait"))
+					fprintf(stderr,"Received wait message.\n");
 		}
 		else {
 			clear_last_line();
+			clear_command_input();
 			pthread_mutex_lock(&scrMutex);	
 			mvwprintw(welcome, 22, 2, "Invalid command");
 			wrefresh(welcome);			
 			pthread_mutex_unlock(&scrMutex);
-			clear_command_input();
+			
+			//The command is invalid. Wait until the server refreshes the rooms list.
+			if(read(session->socket_descriptor, buffer, sizeof(buffer)) > 0)
+				if(!strcmp(buffer,"wait"))
+					fprintf(stderr,"Received wait message.\n");			
 		}
 			    
 	}
 	
 }
+
+
 void clear_last_line()
 {
 	pthread_mutex_lock(&scrMutex);
@@ -237,4 +287,46 @@ void clear_command_input()
 	pthread_mutex_unlock(&scrMutex);
 }
 
+
+void listenToMsgs() {
+	int bufferSize = maxx-4;
+	char *buffer = malloc(bufferSize);
+	int waitAck = 1;
+
+	while(1) {
+	
+		memset(buffer, 0, bufferSize);
+		pthread_mutex_lock(&scrMutex);
+		wrefresh(top);
+		wrefresh(bottom);
+		pthread_mutex_unlock(&scrMutex);
+
+		//receives message from the server
+		read(session->socket_descriptor, buffer, bufferSize);		
+
+		if (!strcmp(buffer, "wait"))
+		{
+			write(session->socket_descriptor, &waitAck, sizeof(int));			
+			break;
+		}		
+
+        	pthread_mutex_lock(&scrMutex);
+		//writes the message received in the terminal
+		mvwprintw(top, chatRow, 3, buffer);
+		wrefresh(top);
+        	pthread_mutex_unlock(&scrMutex);
+        
+		pthread_mutex_lock(&chatMutex);
+		
+		//scrolls the top if the line number exceeds height
+		if(chatRow != (maxy/2 - 2))
+			chatRow++;
+		else
+			scroll(top);
+		pthread_mutex_unlock(&chatMutex);
+	}
+	
+	pthread_exit(NULL);
+
+}
 

@@ -8,7 +8,7 @@
 pthread_mutex_t roomMutex = PTHREAD_MUTEX_INITIALIZER;
 
 // TODO FUNDAMENTAL
-ROOM *ROOM_create(char *name, USER *creator, LIST *rooms) {
+ROOM *ROOM_create(char *name, USER *creator) {
 
 	ROOM *new =  calloc(sizeof(ROOM), 1);
 	if (!new)
@@ -21,8 +21,7 @@ ROOM *ROOM_create(char *name, USER *creator, LIST *rooms) {
 		//TODO: room id
 		strncpy(new->name, name, sizeof(new->name));
 		new->room_admin = &creator;
-		pthread_mutex_lock(&roomMutex);
-		LIST_add_room(&rooms, new);
+		pthread_mutex_lock(&roomMutex);		
 		pthread_mutex_unlock(&roomMutex);
 		return new;
 	}	
