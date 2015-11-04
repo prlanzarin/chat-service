@@ -58,7 +58,7 @@ int ROOM_kick_user(ROOM *room, USER *user) {
 	pthread_mutex_lock(&roomMutex);
 	LIST_remove((room->online_users), (LIST *) user);
 	pthread_mutex_unlock(&roomMutex);
-	return -1;
+	return 1;
 }
 
 void ROOM_add_user(ROOM *room, USER *user) {

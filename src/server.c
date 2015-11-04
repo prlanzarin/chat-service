@@ -23,7 +23,7 @@ int main(int argc , char *argv[])
 	SESSION *s_ptr;
 	int i;
 	ROOM testrooms[10];	
-	
+
 	if((server = SERVER_new(AF_INET, PORT, NULL)) == NULL) {
 		fprintf(stderr, "ERROR: server creation failed.\n");
 		exit(EXIT_FAILURE);
@@ -54,7 +54,7 @@ int main(int argc , char *argv[])
 			printf("FREE SESSION FOUND: %d\n", curr_session);
 		else 
 			break;
-		
+
 		s_ptr[curr_session].valid = 1;
 		// reply to the client
 		message = "	CHAT SERVICE\n"; 
@@ -89,7 +89,7 @@ void *connection_handler(void *in)
 
 	char *message;
 	USER *newUser;
-	
+
 	//Send some messages to the client
 	message = "	Hello! Type your nickname:";
 	write(sock, message, strlen(message));
@@ -98,12 +98,12 @@ void *connection_handler(void *in)
 	if(read(sock, buffer, sizeof(buffer)) > 0)
 		printf ("	The chosen nickname is %s\n",buffer);
 
-        //Default password, for now.
+	//Default password, for now.
 	newUser = USER_create(buffer, 0);
 	newUser->online = 1;
 	//Adds the new user to the list
 	SERVER_new_user(sock, newUser); 
-		
+
 	//Send the available rooms to the client
 	SERVER_show_rooms(sock);
 
@@ -171,7 +171,7 @@ SERVER *SERVER_new(short family, unsigned short port, USER *admin) {
 		SESSION_set(&server->sessions[i], AF_INET, PORT, SERVER_HOSTNAME,
 				PORT, NULL); 
 
-//	ROOM *lobby = ROOM_create("Lobby", admin);	
+	//	ROOM *lobby = ROOM_create("Lobby", admin);	
 	server->rooms = NULL; //LIST_create(lobby);
 	server->users = NULL; //LIST_create(admin);
 
@@ -211,7 +211,7 @@ USER *SERVER_get_user_by_name(char *userName)
 		fprintf(stderr,"ERROR: Null pointer to user name!");
 		return NULL;
 	}
-	
+
 	pthread_mutex_lock(&userListMutex);
 	while (users)
 	{
@@ -221,6 +221,8 @@ USER *SERVER_get_user_by_name(char *userName)
 			pthread_mutex_unlock(&userListMutex);
 			return check;
 		}
+
+		users = users->next;
 	}
 	pthread_mutex_unlock(&userListMutex);
 	return NULL;
@@ -235,7 +237,7 @@ ROOM *SERVER_get_room_by_name(char *roomName)
 		fprintf(stderr,"ERROR: Null pointer to user name!");
 		return NULL;
 	}
-	
+
 	pthread_mutex_lock(&roomListMutex);
 	while (rooms)
 	{
@@ -245,6 +247,9 @@ ROOM *SERVER_get_room_by_name(char *roomName)
 			pthread_mutex_unlock(&roomListMutex);
 			return check;
 		}
+
+		rooms = rooms->next;
+
 	}
 	pthread_mutex_unlock(&roomListMutex);
 	return NULL;
@@ -258,7 +263,7 @@ SESSION *SERVER_get_session_by_user(char *userName)
 	for (i = 0; i < MAX_SESSIONS; i++)
 	{
 		check = &(server->sessions[i]);
-		
+
 		if(!strncmp(check->user->name, userName, MAX_USER_NAME)) {
 			pthread_mutex_unlock(&userListMutex);
 			return check;
@@ -302,9 +307,7 @@ void SERVER_show_rooms(int socket)
 
 	//before showing the rooms, server must inform the listen thread in the client
 	write(socket, waitMessage, strlen(waitMessage));
-	fprintf(stderr, "Sent waitMessage: %s\n", waitMessage);
 	read(socket, &waitAck, sizeof(int));
-	fprintf(stderr, "Received waitAck %d\n", waitAck);
 
 	pthread_mutex_lock(&roomListMutex);
 	while (rooms)
@@ -312,16 +315,12 @@ void SERVER_show_rooms(int socket)
 		room = (ROOM *) (rooms->node);
 		write(socket, room->name, strnlen(room->name, MAX_ROOM_NAME));
 		read(socket, &ack, sizeof(int));	
-		fprintf(stderr, "Received roomAck %d\n",ack);
 		rooms = rooms->next;		
 	}
 	pthread_mutex_unlock(&roomListMutex);
 
-	fprintf(stderr, "Finished sending available rooms.\n");
-	fprintf(stderr, "Sending finishMessage: %s\n", finishMessage);
 	write(socket, finishMessage, strlen(finishMessage));
 	read(socket, &finishAck, sizeof(int));
-	fprintf(stderr, "Received finishAck %d\n", finishAck);
 }
 
 int SERVER_checkRoomExists (char *roomName)
@@ -347,7 +346,7 @@ void send_message(ROOM *room, char *message)
 	SESSION *session;
 	USER *user = (USER *) (users->node);
 	pthread_mutex_lock(&roomListMutex);
-	while(users)
+	while (users)
 	{
 		user = (USER *) (users->node);
 		session = SERVER_get_session_by_user(user->name);
@@ -364,6 +363,7 @@ int SERVER_change_user_name(char *user_name, char *new_name) {
 		return -1;	
 
 	strncpy(user->name, new_name, MAX_USER_NAME);
+	puts(user->name);
 	return 0;
 }
 
@@ -376,16 +376,28 @@ void SERVER_process_user_cmd (int socket, char *userName)
 	char *roomName = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char *newUserName = malloc(sizeof(char)*MAX_USER_NAME);
 	char *hasJoinedMessage = malloc(sizeof(char)*(MAX_USER_NAME + 22));
+	char *who_what = malloc(sizeof(char) * (MAX_USER_NAME + 256 + 9));
 	int canCreateRoom, canEnterRoom, QUIT = 0, IN_ROOM = 0;
 	ROOM *targetRoom = NULL;
 	USER *targetUser;
+	LIST *templist;
 
-	memset(userInput, 0, MAX_USER_INPUT);
 
 	targetUser = SERVER_get_user_by_name(userName);
 
 	while(!QUIT) {
 		//reads the user input
+
+
+		memset(userInput, 0, (sizeof(char)*(MAX_USER_INPUT + 256)));
+		memset(selectedRoom, 0, (sizeof(char)*MAX_ROOM_NAME));
+		//memset(msg, 0, sizeof(char) *256);
+		memset(roomName, 0, sizeof(char) *MAX_ROOM_NAME);
+		memset(newUserName, 0, sizeof(char) *MAX_USER_NAME);
+		memset(hasJoinedMessage, 0, sizeof(char)*(MAX_USER_NAME+22));
+		memset(who_what, 0, sizeof(char)*(MAX_USER_NAME+256+9));
+
+
 		fprintf(stderr,"Waiting for client %s's commands...\n",userName);
 		read(socket, userInput, MAX_USER_INPUT);
 		fprintf(stderr, "userInput: %s\n", userInput);
@@ -401,24 +413,25 @@ void SERVER_process_user_cmd (int socket, char *userName)
 			//waits for the client to choose the room
 			fprintf(stderr, "User %s wants to join room %s.\n", userName, selectedRoom);
 			targetRoom = SERVER_get_room_by_name(selectedRoom);
-			if (targetRoom == NULL)		
+			if (targetRoom == NULL)	{
 				canEnterRoom = 0;
-			else
+				write(socket, &canEnterRoom, sizeof(int));
+				SERVER_show_rooms(socket);
+			}
+			else {
 				canEnterRoom = 1;			
-			write(socket, &canEnterRoom, sizeof(int));
+				write(socket, &canEnterRoom, sizeof(int));
+				//Adds the user to the specified room
+				ROOM_add_user(targetRoom, targetUser);
 
-			//Adds the user to the specified room
-			ROOM_add_user(targetRoom, targetUser);
+				fprintf(stderr, "Server: userName antes da strcpy: %s\n", userName);
+				//warns the other clients in the room that a new client has joined
+				strcpy(hasJoinedMessage, userName);
+				strcat(hasJoinedMessage, " has joined the room.");
 
-
-			fprintf(stderr, "Server: userName antes da strcpy: %s\n", userName);
-			//warns the other clients in the room that a new client has joined
-			strcpy(hasJoinedMessage, userName);
-			strcat(hasJoinedMessage, " has joined the room.");
-			
-			send_message(targetRoom, hasJoinedMessage); 
-			IN_ROOM = 1;
-
+				send_message(targetRoom, hasJoinedMessage); 
+				IN_ROOM = 1;
+			}
 			//fprintf(stderr, "Server: listenToMsgs will receive userName %s\n", userName);
 			//server listens to msgs in the chat
 			//listenToMsgs(userName, roomIndex, socket);
@@ -426,13 +439,15 @@ void SERVER_process_user_cmd (int socket, char *userName)
 		}
 		else if (!strcmp(userInput, "\\quit"))
 		{
+			templist = LIST_create((void *)targetUser);
 			QUIT = 1;
-			close(socket);
+			ROOM_kick_user(targetRoom, targetUser);
+                        LIST_remove(server->users, templist);
+                        close(socket);
 
 		}
 		else if (!strcmp(userInput, "\\send"))
 		{
-			char *who_what = malloc(sizeof(char) * (strlen(userName) + 256 + 9));
 			strcpy(who_what, userName);
 			strcat(who_what, " says:");
 
@@ -440,17 +455,15 @@ void SERVER_process_user_cmd (int socket, char *userName)
 				strcat(who_what, msg);
 				strcat(who_what, " ");
 			}
-			
+
 			//waits for the client to choose the room
-			fprintf(stderr, "Server: broadcast message %s from %s\n", msg, userName);
 			//warns the other clients in the room that a new client has joined
 			send_message(targetRoom, who_what); 
-			free(who_what);
 
 		}
 		else if (!strcmp(userInput, "\\leave"))
 		{
-			if(IN_ROOM || targetRoom == NULL) {
+			if(targetRoom == NULL || targetUser == NULL) {
 				IN_ROOM = 1;
 				write(socket, &IN_ROOM, sizeof(int));
 			}
@@ -465,9 +478,11 @@ void SERVER_process_user_cmd (int socket, char *userName)
 		{
 			newUserName = strtok(NULL, " ");
 			fprintf(stderr, "Server: Client wants to change his name to %s\n", newUserName);
+			strncpy(userName, newUserName, MAX_USER_NAME);
 			SERVER_change_user_name(userName, newUserName);
 			fprintf(stderr, "Server: nome do cliente apos changeuserName: %s\n", newUserName);
 			SERVER_show_rooms(socket);
+			fflush(stdin);
 			//checkUserInputFromOutside(socket, newuserName);
 		}
 		else if (!strcmp(userInput, "\\create"))
@@ -476,18 +491,15 @@ void SERVER_process_user_cmd (int socket, char *userName)
 			fprintf(stderr, "User %s wants to create room %s\n", userName, roomName);
 
 			if(SERVER_checkRoomExists(roomName)) {
-				fprintf(stderr, "ERROR: Room with name %s already exists!\n", roomName);
 				canCreateRoom = 0;
 				write(socket, &canCreateRoom, sizeof(int));			
 			}
 			else if (roomName == NULL)
 			{
-				fprintf(stderr, "ERROR: Attempt to create nameless room!\n");
 				canCreateRoom = 0;
 				write(socket, &canCreateRoom, sizeof(int));			
 			}
 			else {
-				fprintf(stderr, "Room with name %s will be created.\n", roomName);
 				canCreateRoom = 1;
 				write(socket, &canCreateRoom, sizeof(int));
 				SERVER_create_room(SERVER_get_user_by_name(userName), roomName);			
