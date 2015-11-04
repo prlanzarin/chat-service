@@ -370,7 +370,7 @@ int SERVER_change_user_name(char *user_name, char *new_name) {
 void SERVER_process_user_cmd (int socket, char *userName)
 {
 	/* gotta free those on end */	
-	char *userInput = malloc(sizeof(char)*MAX_USER_INPUT);
+	char *userInput = malloc(sizeof(char)*(MAX_USER_INPUT + 256));
 	char *selectedRoom = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char *msg = malloc(sizeof(char)*256);
 	char *roomName = malloc(sizeof(char)*MAX_ROOM_NAME);
@@ -432,16 +432,18 @@ void SERVER_process_user_cmd (int socket, char *userName)
 		}
 		else if (!strcmp(userInput, "\\send"))
 		{
-			msg = strtok(NULL, " ");
-			puts("SERVER SEND CALL");
-			puts(msg);
+			char *who_what = malloc(sizeof(char) * (strlen(userName) + 256 + 9));
+			strcpy(who_what, userName);
+			strcat(who_what, " says:");
+
+			while((msg = strtok(NULL, " ")) != NULL) {
+				strcat(who_what, msg);
+				strcat(who_what, " ");
+			}
+			
 			//waits for the client to choose the room
 			fprintf(stderr, "Server: broadcast message %s from %s\n", msg, userName);
-			char *who_what = malloc(sizeof(char) * (strlen(userName) + strlen(msg) + 9));
 			//warns the other clients in the room that a new client has joined
-			strcpy(who_what, userName);
-			strcat(who_what, " says: ");
-			strcat(who_what, msg);
 			send_message(targetRoom, who_what); 
 			free(who_what);
 

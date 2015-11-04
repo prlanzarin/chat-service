@@ -310,7 +310,14 @@ void clear_command_input()
 	pthread_mutex_unlock(&scrMutex);
 }
 
+void clear_chat_input()
+{
+	pthread_mutex_lock(&scrMutex);
+	mvwprintw(welcome, welcomeRow, 45, "                           ");
+	wrefresh(welcome);
+	pthread_mutex_unlock(&scrMutex);
 
+}
 void listenToMsgs() {
 	int bufferSize = maxx-4;
 	char *buffer = malloc(bufferSize);
@@ -363,7 +370,7 @@ void listenToMsgs() {
 
 void *send_message()
 {
-	char buffer[256];
+	char buffer[MAX_USER_INPUT + 256];
 	int left_chat = 0;
 	char userInput[MAX_USER_INPUT];
 	char *userCommand = malloc(sizeof(char)*MAX_USER_COMMAND);
@@ -379,7 +386,7 @@ void *send_message()
 		wgetnstr(bottom, buffer, MAX_MESSAGE_SIZE - 2);
 		//sends the whole input to the server
 		pthread_mutex_lock(&writeMutex);
-		write(session->socket_descriptor, userInput, strlen(userInput));	
+		write(session->socket_descriptor, buffer, strlen(buffer));	
 		pthread_mutex_unlock(&writeMutex);
 
 		//gets only the command from the input
@@ -387,13 +394,11 @@ void *send_message()
 		if (!strcmp(userCommand, "\\send"))
 		{
 			//Server responds to room broadcast
-			puts("CLIENT SENT");	
 			pthread_mutex_lock(&scrMutex);
-			wrefresh(bottom);
+			wclear(bottom);
+			box(bottom, '|', '+');
+			wsetscrreg(bottom, 1, maxy/2-2);
 			pthread_mutex_unlock(&scrMutex);
-			if(read(session->socket_descriptor, buffer, sizeof(buffer)) > 0)
-				if(!strcmp(buffer,"wait"))
-					fprintf(stderr,"Received wait message.\n");
 		}
 		else if (!strcmp(userCommand, "\\leave"))
 		{
@@ -406,9 +411,22 @@ void *send_message()
 			pthread_mutex_unlock(&inChatMutex);
 			goto end;	
 		}
-		drawChat();
+		else {
+			pthread_mutex_lock(&scrMutex);
+			box(top, '|', '+');
+			box(bottom, '|', '+');
+
+			wsetscrreg(top, 1, maxy/2-2);
+			wsetscrreg(bottom, 1, maxy/2-2);
+			pthread_mutex_unlock(&scrMutex);
+
+		}
+		wrefresh(top);
+		wrefresh(bottom);
 	}
 	end:
 	free(userCommand);
 	pthread_exit(0);
 }
+
+
