@@ -57,7 +57,7 @@ int main(int argc , char *argv[])
 		
 		s_ptr[curr_session].valid = 1;
 		// reply to the client
-		message = "	Hello Client, you'll be handled properly\n"; 
+		message = "	CHAT SERVICE\n"; 
 		write(s_ptr[curr_session].socket_descriptor, 
 				message, strlen(message));
 
@@ -91,13 +91,7 @@ void *connection_handler(void *in)
 	USER *newUser;
 	
 	//Send some messages to the client
-	message = "	Greetings! I am your connection handler\n";
-	write(sock, message, strlen(message));
-
-	message = "	Its my duty to communicate with you\n";
-	write(sock, message, strlen(message));
-
-	message = "	Type your nickname:";
+	message = "	Hello! Type your nickname:";
 	write(sock, message, strlen(message));
 
 	//Receive the chosen nickname
@@ -415,19 +409,16 @@ void SERVER_process_user_cmd (int socket, char *userName)
 			//Adds the user to the specified room
 			ROOM_add_user(targetRoom, targetUser);
 
-			send_message(targetRoom, "olá");
-			fprintf(stderr, "depois do send:\n");
 
 			fprintf(stderr, "Server: userName antes da strcpy: %s\n", userName);
 			//warns the other clients in the room that a new client has joined
 			strcpy(hasJoinedMessage, userName);
 			strcat(hasJoinedMessage, " has joined the room.");
-
+			
+			send_message(targetRoom, hasJoinedMessage); 
 			IN_ROOM = 1;
-			break; /* MOVE DOWN WHEN DONE */	
-			//writeToRoom(hasJoinedMessage, roomIndex, socket);
 
-			fprintf(stderr, "Server: listenToMsgs will receive userName %s\n", userName);
+			//fprintf(stderr, "Server: listenToMsgs will receive userName %s\n", userName);
 			//server listens to msgs in the chat
 			//listenToMsgs(userName, roomIndex, socket);
 
@@ -445,8 +436,8 @@ void SERVER_process_user_cmd (int socket, char *userName)
 
 			IN_ROOM = 0;
 			ROOM_kick_user(targetRoom, targetUser);
+			
 			SERVER_show_rooms(socket);
-			break;
 		}
 		else if (!strcmp(userInput, "\\nick"))
 		{
@@ -455,7 +446,6 @@ void SERVER_process_user_cmd (int socket, char *userName)
 			SERVER_change_user_name(userName, newUserName);
 			fprintf(stderr, "Server: nome do cliente apos changeuserName: %s\n", newUserName);
 			SERVER_show_rooms(socket);
-			break;
 			//checkUserInputFromOutside(socket, newuserName);
 		}
 		else if (!strcmp(userInput, "\\create"))
@@ -481,11 +471,9 @@ void SERVER_process_user_cmd (int socket, char *userName)
 				SERVER_create_room(SERVER_get_user_by_name(userName), roomName);			
 			}
 			SERVER_show_rooms(socket);
-			break;
 		}
 		else {
 			SERVER_show_rooms(socket);
-			break;
 		}	
 
 	}

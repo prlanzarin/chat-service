@@ -48,7 +48,8 @@ int ROOM_close(int room_id, LIST *rooms) {
 }
 
 // TODO FUNDAMENTAL
-int ROOM_broadcast_message(ROOM *room, MESSAGE *msg) {
+int ROOM_broadcast_message(ROOM *room, char *msg, int session_socket) {
+	
 	return -1;
 }
 

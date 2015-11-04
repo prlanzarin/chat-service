@@ -94,7 +94,6 @@ MESSAGE *MESSAGE_deserialize(unsigned char *msg) {
 	msg = int_deserialize(msg, &op);
 	msg = int_deserialize(msg, &who);
 	msg = int_deserialize(msg, (int *) &data_size);
-	printf("%d %d %u\n", op, who, data_size);
 	buffer = (char *)malloc(sizeof(data_size));
 	for(i = 0; i < data_size; i++)
 		msg = char_deserialize(msg, &buffer[i]); 

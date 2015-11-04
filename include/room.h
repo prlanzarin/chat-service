@@ -24,7 +24,7 @@ ROOM *ROOM_create(char *name, USER *creator);
 int ROOM_close(int room_id, LIST *rooms);
 
 // FUNDAMENTAL
-int ROOM_broadcast_message(ROOM *room, MESSAGE *msg);
+int ROOM_broadcast_message(ROOM *room, char *msg, int session_socket);
 
 int ROOM_kick_user(ROOM *room, USER *user);
 

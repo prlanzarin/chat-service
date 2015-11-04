@@ -5,8 +5,10 @@
 
 #define	MAX_USER_COMMAND 10
 #define MAX_USER_COMMAND_ARG 20
+#define MAX_MESSAGE_SIZE 256
 
 void *read_message();
+void *send_message();
 void drawWelcome();
 void drawChat();
 void chooseRoom();
