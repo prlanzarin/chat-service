@@ -372,6 +372,7 @@ void SERVER_process_user_cmd (int socket, char *userName)
 	/* gotta free those on end */	
 	char *userInput = malloc(sizeof(char)*MAX_USER_INPUT);
 	char *selectedRoom = malloc(sizeof(char)*MAX_ROOM_NAME);
+	char *msg = malloc(sizeof(char)*256);
 	char *roomName = malloc(sizeof(char)*MAX_ROOM_NAME);
 	char *newUserName = malloc(sizeof(char)*MAX_USER_NAME);
 	char *hasJoinedMessage = malloc(sizeof(char)*(MAX_USER_NAME + 22));
@@ -429,15 +430,34 @@ void SERVER_process_user_cmd (int socket, char *userName)
 			close(socket);
 
 		}
+		else if (!strcmp(userInput, "\\send"))
+		{
+			msg = strtok(NULL, " ");
+			puts("SERVER SEND CALL");
+			puts(msg);
+			//waits for the client to choose the room
+			fprintf(stderr, "Server: broadcast message %s from %s\n", msg, userName);
+			char *who_what = malloc(sizeof(char) * (strlen(userName) + strlen(msg) + 9));
+			//warns the other clients in the room that a new client has joined
+			strcpy(who_what, userName);
+			strcat(who_what, " says: ");
+			strcat(who_what, msg);
+			send_message(targetRoom, who_what); 
+			free(who_what);
+
+		}
 		else if (!strcmp(userInput, "\\leave"))
 		{
-			if(IN_ROOM || targetRoom == NULL)
-				break;
-
-			IN_ROOM = 0;
-			ROOM_kick_user(targetRoom, targetUser);
-			
-			SERVER_show_rooms(socket);
+			if(IN_ROOM || targetRoom == NULL) {
+				IN_ROOM = 1;
+				write(socket, &IN_ROOM, sizeof(int));
+			}
+			else {	
+				IN_ROOM = 0;
+				ROOM_kick_user(targetRoom, targetUser);
+				write(socket, &IN_ROOM, sizeof(int));
+				SERVER_show_rooms(socket);
+			}
 		}
 		else if (!strcmp(userInput, "\\nick"))
 		{
