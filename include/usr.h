@@ -15,22 +15,21 @@ typedef struct user {
         int id;
         char name[MAX_USER_NAME];
         int password;
-        int online;
+        int in_chat;
+        ROOM *room;
 } USER;
 
 /* USER subroutines */
 
 USER *USER_create(char *name, int password);
 
-int USER_login(char *name, int password);
-
-int USER_logoff(USER *user);
+int USER_change_name(USER *user, char *name);
 
 //FUNDAMENTAL
 int USER_join_room(USER *user, ROOM *room);
 
 //FUNDAMENTAL
-int USER_leave_room(USER *user, ROOM *room);
+int USER_leave_room(USER *user);
 
 //FUNDAMENTAL
 int USER_send_message_to_room(USER *user, MESSAGE *msg, ROOM *room);

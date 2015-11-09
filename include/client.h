@@ -5,7 +5,7 @@
 
 #define	MAX_USER_COMMAND 10
 #define MAX_USER_COMMAND_ARG 20
-#define MAX_MESSAGE_SIZE 256
+
 
 void *read_message();
 void *send_message();
@@ -13,6 +13,6 @@ void chooseRoom();
 void getAvailableRooms();
 void clear_command_input();
 void clear_last_line();
-void listenToMsgs();
+void listen_to_msgs();
 
 #endif

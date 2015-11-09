@@ -5,7 +5,7 @@
 #include "usr.h"
 #include "list.h"
 #include "session.h"
-#include "../include/message.h"
+#include "message.h"
 
 #define MAX_SESSIONS 20
 #define BACKLOG_CONNECTIONS 4
@@ -17,7 +17,6 @@ typedef struct server {
         struct sockaddr_in server_socket;
         USER *server_admin;
         LIST *rooms;
-	LIST *users; //includes offline and online users
         SESSION sessions[MAX_SESSIONS]; // w/ online users
 } SERVER;
 
@@ -26,17 +25,27 @@ extern SERVER *server;
 SERVER *SERVER_new(short family, unsigned short port, 
 		USER *admin);
 
-int SERVER_new_user(int socket_desc, USER *newUser);
+int SERVER_send_message(int socket, char *buffer);
 
-int SERVER_user_login();
+int SERVER_new_user(SESSION *session, char *buffer);
 
-int SERVER_user_logoff();
+int SERVER_create_room(SESSION *session, char *buffer);
+
+int SERVER_join_room(SESSION *session, char *buffer);
+
+int SERVER_leave_room(SESSION *session, char *buffer);
+
+int SERVER_room_broadcast(SESSION *session, char *buffer);
+
+int SERVER_send_whisper(SESSION *session, char *buffer);
+
+int SERVER_help(SESSION *session, char *buffer);
+
+int SERVER_list(SESSION *session, char *buffer);
+
+int SERVER_session_disconnect(SESSION *session);
 
 // FUNDAMENTAL
-int SERVER_create_room(USER *user, char *room_name);
-
-// FUNDAMENTAL
-int SERVER_delete_room(USER *user, int room_id);
 
 void SERVER_show_rooms(int socket);
 
@@ -52,6 +61,5 @@ ROOM *SERVER_get_room_by_name(char *roomName);
 
 SESSION *SERVER_get_session_by_user(char *userName);
 
-void SERVER_send_message(char *userName, char *message);
 
 #endif
