@@ -11,7 +11,9 @@ int main(int argc, char *argv[]) {
 	int op = 1; int who = 2;
 	strncpy(buffer, "MENSAGEM", data_size);
 //	strncpy(buffert, "AAAAAAAA", data_size);
-
+//
+	printf("%d SIZE PREPROC %d SIZE POSTPROC\n", strlen(USER_NICKNAME),
+			strlen("\\nick"));
 	MESSAGE *msg;
 	msg = MESSAGE_new(op, who, data_size, buffer);
 	printf("NEW: %d %d %u\n", msg->op, msg->who, msg->data_size);

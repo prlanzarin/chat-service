@@ -117,32 +117,34 @@ void *connection_handler(void *in)
 			SERVER_room_broadcast(session, 
 					buffer + strlen(USER_SEND_MESSAGE_TO_ROOM));
 
-		else if (!strstr(buffer, "\\leave"))
-			SERVER_leave_room(session, buffer + 1);
+		else if (!strstr(buffer, USER_LEAVE_ROOM))
+			SERVER_leave_room(session, buffer + strlen(USER_LEAVE_ROOM));
 
-		else if (!strstr(buffer, "\\join"))
-			SERVER_join_room(session, buffer + 1);
+		else if (!strstr(buffer, USER_JOIN_ROOM))
+			SERVER_join_room(session, buffer + strlen(USER_JOIN_ROOM));
 
-		else if (!strstr(buffer, "\\quit")) 
+		else if (!strstr(buffer, QUIT)) 
 			SERVER_session_disconnect(session);
 
-		else if (!strstr(buffer, "\\create"))
-			SERVER_create_room(session, buffer + 1);
+		else if (!strstr(buffer, ROOM_CREATION))
+			SERVER_create_room(session, buffer + strlen(ROOM_CREATION));
 
-		else if (!strstr(buffer, "\\nick"))
-			SERVER_new_user(session, buffer + 1);
+		else if (!strstr(buffer, USER_NICKNAME))
+			SERVER_new_user(session, buffer + strlen(USER_NICKNAME));
 
-		else if (!strstr(buffer, "\\ls"))
-			SERVER_list(session, buffer + 1);
+		else if (!strstr(buffer, ROOM_LISTING))
+			SERVER_list(session, buffer + strlen(ROOM_LISTING));
 
-		else if (!strstr(buffer, "\\help"))
-			SERVER_help(session, buffer + 1);
+		else if (!strstr(buffer, HELP))
+			SERVER_help(session, buffer + strlen(HELP));
 
-		else if (!strstr(buffer, "\\whisper"))
-			SERVER_send_whisper(session, buffer + 1);
+		else if (!strstr(buffer, USER_SEND_PRIVATE_MESSAGE)) 
+			SERVER_send_whisper(session, 
+					buffer + strlen(USER_SEND_PRIVATE_MESSAGE));
 
 		else if (SERVER_invalid_command(buffer))
 			SERVER_send_message(sock, "INVALID COMMAND!");
+
 		else 
 			SERVER_send_message(sock, "INVALID COMMAND!");
 	}

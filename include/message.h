@@ -17,7 +17,8 @@
 #define USER_LOGOFF
 #define HELP "\\help"
 #define LIST_ROOMS "\\ls"
-#define NICK "\\nick"
+#define USER_NICKNAME "\\nick"
+#define ROOM_LISTING "\\ls"
 
 struct message {
         int op; // operation ID. It'll define how data will be deserialized
@@ -27,25 +28,7 @@ struct message {
 } __attribute__((packed));
 
 typedef struct message MESSAGE; 
-/*
-enum chat_ops { 
-        QUIT,
-        ROOM_CREATION, // TODO ASAP
-        ROOM_DELETION, // TODO ASAP
-        USER_JOIN_ROOM, // TODO ASAP
-        USER_LEAVE_ROOM, // TODO ASAP
-        USER_SEND_MESSAGE_TO_ROOM, // TODO ASAP
-        USER_SEND_PRIVATE_MESSAGE, //TODO  
-        ROOM_ADD_USER, //TODO 
-        ROOM_KICK_USER, //TODO 
-        SESSION_CREATE_USER, //TODO
-        SESSION_USER_LOGIN, //TODO
-        USER_LOGOFF, //TODO
-        HELP,
-        LIST_ROOMS,
-        NICK
-};
-*/
+
 unsigned char *char_serialize(unsigned char *buffer, char c);
 
 unsigned char *int_serialize(unsigned char *buffer, int n);

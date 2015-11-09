@@ -67,31 +67,32 @@ void *send_message()
 		UI_read_from(bottom, sendbuffer, chatInRow, CHAT_INPUT_COLUMN,
 				MAX_MESSAGE_SIZE);
 
-		if (!strstr(sendbuffer, "\\send"))
+		if (!strstr(sendbuffer, USER_SEND_MESSAGE_TO_ROOM))
 		{
-			//Server responds to room broadcast
+			// Broadcasts a message to room
 			pthread_mutex_lock(&writeMutex);
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);
 			pthread_mutex_unlock(&writeMutex);
 			UI_redraw_window(bottom, '|', '+');
 		}
-		else if (!strstr(sendbuffer, "\\leave"))
+		else if (!strstr(sendbuffer, USER_LEAVE_ROOM))
 		{
-			//Server responds to leave room request 
+			// Leaves room
 			pthread_mutex_lock(&writeMutex);
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);
 			pthread_mutex_unlock(&writeMutex);
 			UI_redraw_window(top, '|', '+');
 			UI_redraw_window(bottom, '|', '+');
 		}
-		else if (!strstr(sendbuffer, "\\join"))
+		else if (!strstr(sendbuffer, USER_JOIN_ROOM))
 		{			
+			// Joins room
 			pthread_mutex_lock(&writeMutex);
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1); 
 			pthread_mutex_unlock(&writeMutex);
 
 		}
-		else if (!strstr(sendbuffer, "\\quit")) 
+		else if (!strstr(sendbuffer, QUIT)) 
 		{
 			// just close everything pls
 			endwin();			
@@ -99,24 +100,24 @@ void *send_message()
 			exit(1);
 
 		}
-		else if (!strstr(sendbuffer, "\\create"))
+		else if (!strstr(sendbuffer, ROOM_CREATION))
 		{
-			//sends the whole input to the server
+			// Creates room
 			pthread_mutex_lock(&writeMutex);
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);	
 			pthread_mutex_unlock(&writeMutex);
 		}
-		else if (!strstr(sendbuffer, "\\nick"))
+		else if (!strstr(sendbuffer, USER_NICKNAME))
 		{
 			clear_command_input();
 			pthread_mutex_lock(&writeMutex);			
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);	
 			pthread_mutex_unlock(&writeMutex);
 		}
-		else if (!strstr(sendbuffer, "\\ls")) {
+		else if (!strstr(sendbuffer, LIST_ROOMS)) {
 
 		}
-		else if (!strstr(sendbuffer, "\\help")) {
+		else if (!strstr(sendbuffer, HELP)) {
 
 		}
 		else {
@@ -159,51 +160,6 @@ void *read_message()
 }
 
 
-void getAvailableRooms()
-{
-	int finish = 0;
-	int count = 0;
-	char roomName[MAX_ROOM_NAME];
-	int ack;
-	int waitAck = 10;
-	int finishAck = 11;
-	int r;
-
-	pthread_mutex_lock(&writeMutex);
-	write(session->socket_descriptor, &waitAck, sizeof(int));
-	pthread_mutex_unlock(&writeMutex);
-
-	while(finish == 0)
-	{
-		memset(roomName, 0, MAX_ROOM_NAME);	
-		r = read(session->socket_descriptor, roomName, MAX_ROOM_NAME);
-		if (r > 0)
-		{
-			if(!strcmp(roomName, "finish")) {
-				pthread_mutex_lock(&writeMutex);
-				write(session->socket_descriptor, &finishAck, sizeof(int));
-				pthread_mutex_unlock(&writeMutex);
-				finish = 1;
-				break;			
-			}
-			//Prints only the rooms with a name
-			if(strcmp(roomName, " ")) {
-				pthread_mutex_lock(&scrMutex);					
-				mvwprintw(welcome, welcomeRow+2+count, 2, roomName);
-				//fprintf(stderr, "\n\n\n\n\nali>=%s\n",roomName);				
-				wrefresh(welcome);
-				pthread_mutex_unlock(&scrMutex);
-				ack = count;
-				pthread_mutex_lock(&writeMutex);
-				write(session->socket_descriptor, &ack, sizeof(int));
-				pthread_mutex_unlock(&writeMutex);
-				count++;
-			}
-
-		}				
-	}
-	return;
-}
 void clear_command_input()
 {
 	pthread_mutex_lock(&scrMutex);
