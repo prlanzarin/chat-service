@@ -2,23 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include "../include/client.h"
 #include "../include/session.h"
+#include "../include/ui.h"
 #include <unistd.h>
 #include <pthread.h> 
 #include <curses.h>
-
-#define WELCOME_ROW 1
-#define WELCOME_COLUMN 2
-#define WELCOME_INPUT_ROW 2
-#define WELCOME_INPUT_COLUMN 21
-#define CHAT_OUTPUT_ROW 1
-#define CHAT_OUTPUT_COLUMN 2
-#define CHAT_INPUT_ROW 1
-#define CHAT_INPUT_COLUMN 2
+#include "../include/client.h"
 
 SESSION *session;
-int maxx, maxy; //screen dimensions
 int welcomeRow = WELCOME_ROW;
 int chatRow = CHAT_OUTPUT_ROW;
 int chatInRow = CHAT_INPUT_ROW;
@@ -31,76 +22,35 @@ pthread_mutex_t chatMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t writeMutex = PTHREAD_MUTEX_INITIALIZER;
 WINDOW *welcome; WINDOW *top;
 WINDOW *bottom;
-pthread_t input_thread;
-pthread_t read_thread;
+pthread_t input_thread, listen_thread;
 
 int main(int argc, char *argv[]) {
 	char buffer[256];
-	
-	
-	initscr();		
-	getmaxyx(stdscr, maxy, maxx);
-	drawWelcome();	
+	UI_init(welcome);
+
+	/* Client session start */
 	session = SESSION_new(AF_INET, PORT, SERVER_HOSTNAME, PORT, NULL);
 	if(SESSION_connect(session) == -1)
 	{
 		printf ("ERRROR: could not create session.");
 		return -1;
 	}
-	if(pthread_create(&read_thread, NULL, read_message, NULL) < 0) 
+
+	if(pthread_create(&listen_thread, NULL, read_message, NULL) < 0) 
 	{
 		perror("ERROR: client message reading thread could not be created.");
 		exit(EXIT_FAILURE);
 	}
-	fflush(stdin);
-	mvwgetnstr(welcome, WELCOME_INPUT_ROW, WELCOME_INPUT_COLUMN, buffer, 20);
-	write(session->socket_descriptor, buffer, sizeof(buffer));
-	fflush(stdin);
-	
-	//drawChat();
 
-	pthread_join(read_thread, NULL);
+	mvwgetnstr(welcome, WELCOME_INPUT_ROW, WELCOME_INPUT_COLUMN, buffer, 20);
+	puts(buffer);
+	pthread_mutex_lock(&writeMutex);
+	write(session->socket_descriptor, buffer, sizeof(buffer));
+	pthread_mutex_unlock(&writeMutex);
+
+	pthread_join(&listen_thread, NULL);
 	return 0; 
 }
-
-void drawWelcome() {
-   	pthread_mutex_lock(&scrMutex);
-	welcome = newwin(maxy, maxx, 0, 0);
-	scrollok(welcome, TRUE);
-	box(welcome, '|', '=');
-	wsetscrreg(welcome, 1, maxy-2);
-	wrefresh(welcome);
-	pthread_mutex_unlock(&scrMutex);
-}
-
-void drawChat() {
-    pthread_mutex_lock(&scrMutex);
-    top = newwin(maxy/2, maxx, 0, 0);
-    bottom = newwin(maxy/2, maxx, maxy/2, 0);
-    scrollok(top, TRUE);
-    scrollok(bottom, TRUE);
-    box(top, '|', '+');
-    box(bottom, '|', '+');
-
-    wsetscrreg(top, 1, maxy/2-2);
-    wsetscrreg(bottom, 1, maxy/2-2);
-    wrefresh(top);
-    wrefresh(bottom);
-    pthread_mutex_unlock(&scrMutex);
-}
-
-void drawBottom() {
-    pthread_mutex_lock(&scrMutex);
-    bottom = newwin(maxy/2, maxx, maxy/2, 0);
-    scrollok(bottom, TRUE);
-    box(bottom, '|', '+');
-
-    wsetscrreg(bottom, 1, maxy/2-2);
-    wrefresh(bottom);
-    pthread_mutex_unlock(&scrMutex);
-}
-
-
 
 void *read_message()
 {
@@ -198,7 +148,8 @@ void chooseRoom() {
 	pthread_mutex_lock(&scrMutex);
 	welcomeRow = WELCOME_ROW;
 	pthread_mutex_unlock(&scrMutex);	
-	drawWelcome();
+	//drawWelcome();
+	UI_redraw_window(welcome, '|', '=');
 
 	while(1) {
 		//The client is choosing a Room.
@@ -241,7 +192,8 @@ void chooseRoom() {
 					pthread_mutex_lock(&choosingRoomMutex);
 					choosingRoom = 0;
 					pthread_mutex_unlock(&choosingRoomMutex);
-					drawChat();
+					//drawChat();
+					UI_set_chat(top, bottom, UI_MAXY/2, UI_MAXX);
 					pthread_mutex_lock(&inChatMutex);
 					in_chat = 1;
 					pthread_mutex_unlock(&inChatMutex);
@@ -347,7 +299,7 @@ void clear_chat_input()
 
 }
 void listenToMsgs() {
-	int bufferSize = maxx-4;
+	int bufferSize = UI_MAXX-4;
 	char *buffer = malloc(bufferSize);
 	int waitAck = 1;
 
@@ -385,7 +337,7 @@ void listenToMsgs() {
 		pthread_mutex_lock(&chatMutex);
 		
 		//scrolls the top if the line number exceeds height
-		if(chatRow != (maxy/2 - 2))
+		if(chatRow != (UI_MAXY/2 - 2))
 			chatRow++;
 		else
 			scroll(top);
@@ -421,22 +373,15 @@ void *send_message()
 		{
 			//Server responds to room broadcast
 			pthread_mutex_lock(&writeMutex);
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer));	
+			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer));
 			pthread_mutex_unlock(&writeMutex);
-
-			pthread_mutex_lock(&scrMutex);
-			wclear(bottom);
-			
-			/*box(bottom, '|', '+');
-			wsetscrreg(bottom, 1, maxy/2-2);*/
-			pthread_mutex_unlock(&scrMutex);
-			drawBottom();
+			UI_redraw_window(bottom, '|', '+');
 		}
 		else if (!strcmp(userCommand, "\\leave"))
 		{
 			//Server responds to leave room request 
 			pthread_mutex_lock(&writeMutex);
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer));	
+			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer));
 			pthread_mutex_unlock(&writeMutex);
 			read(session->socket_descriptor, &left_chat, sizeof(int));
 			if(!left_chat)
@@ -444,7 +389,7 @@ void *send_message()
 			else 
 				fprintf(stderr, "LEFT THE ROOM \n");
 
-			drawWelcome();
+			UI_redraw_window(welcome, '|', '=');
 
 			pthread_mutex_lock(&inChatMutex);
 			in_chat = 0;
@@ -454,27 +399,14 @@ void *send_message()
 			choosingRoom = 1;
 			pthread_mutex_unlock(&choosingRoomMutex);
 
-
-
 			goto end;	
 		}
 		else {
 			//Redraws the window
-			pthread_mutex_lock(&scrMutex);
-			box(top, '|', '+');
-			box(bottom, '|', '+');
-
-			wsetscrreg(top, 1, maxy/2-2);
-			wsetscrreg(bottom, 1, maxy/2-2);
-			wclear(bottom);
-			pthread_mutex_unlock(&scrMutex);
-
+			UI_redraw_window(top, '|', '+');
+			UI_redraw_window(bottom, '|', '+');
 		}
-		wrefresh(top);
-		wrefresh(bottom);
 	}
 	end:
 	pthread_exit(0);
 }
-
-

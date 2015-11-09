@@ -9,9 +9,6 @@
 
 void *read_message();
 void *send_message();
-void drawWelcome();
-void drawChat();
-void redrawChatInput();
 void chooseRoom();
 void getAvailableRooms();
 void clear_command_input();

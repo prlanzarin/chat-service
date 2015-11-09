@@ -10,13 +10,13 @@ BIN_DIR=./bin
 SRC_DIR=./src
 EXE =./bin/client ./bin/server 
 
-all: client server 
-
-client: $(SRC_DIR)/client.c usr.o room.o list.o session.o message.o
-	$(CC) $(DEBUG) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(BIN_DIR)/*.o $(CFLAGS) -pthread -lcurses
+all: server client
 
 server: $(SRC_DIR)/server.c usr.o room.o list.o session.o message.o
 	$(CC) $(DEBUG) -o $(BIN_DIR)/server $(SRC_DIR)/server.c $(BIN_DIR)/*.o $(CFLAGS) -pthread
+
+client: $(SRC_DIR)/client.c usr.o room.o list.o session.o message.o ui.o
+	$(CC) $(DEBUG) -o $(BIN_DIR)/client $(SRC_DIR)/client.c $(BIN_DIR)/*.o $(CFLAGS) -pthread -lncurses
 
 session.o: $(INC_DIR)/session.h $(SRC_DIR)/session.c
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/session.o $(SRC_DIR)/session.c $(CFLAGS)
@@ -29,6 +29,9 @@ room.o: $(INC_DIR)/room.h $(SRC_DIR)/room.c
 
 message.o: $(INC_DIR)/message.h $(SRC_DIR)/message.c
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/message.o $(SRC_DIR)/message.c $(CFLAGS)
+
+ui.o: $(INC_DIR)/ui.h $(SRC_DIR)/ui.c
+	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -o $(BIN_DIR)/ui.o -c $(SRC_DIR)/ui.c $(CFLAGS) -lncurses
 
 list.o: $(INC_DIR)/list.h $(SRC_DIR)/list.c 
 	mkdir -p $(BIN_DIR) && $(CC) $(DEBUG) -c -o $(BIN_DIR)/list.o $(SRC_DIR)/list.c $(CFLAGS) 
