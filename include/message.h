@@ -8,7 +8,7 @@
 #define ROOM_DELETION
 #define USER_JOIN_ROOM "\\join"
 #define USER_LEAVE_ROOM "\\leave"
-#define USER_SEND_MESSAGE_TO_ROOM "\\"
+#define USER_SEND_MESSAGE_TO_ROOM "\\send"
 #define USER_SEND_PRIVATE_MESSAGE "\\whisper"
 #define ROOM_ADD_USER 
 #define ROOM_KICK_USER

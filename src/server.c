@@ -113,40 +113,40 @@ void *connection_handler(void *in)
 			ptr = ptr + inc_size;
 		}
 
-		switch(atoi(&buffer[0])) {
-			case QUIT:
-				goto end;
-			case NICK:
-				SERVER_new_user(session, buffer + 1);
-				break;
-			case ROOM_CREATION: 
-				SERVER_create_room(session, buffer + 1);
-				break;
-			case USER_JOIN_ROOM:
-				SERVER_join_room(session, buffer + 1);
-				break;
-			case USER_LEAVE_ROOM:
-				SERVER_leave_room(session, buffer + 1);
-				break;
-			case USER_SEND_MESSAGE_TO_ROOM:
-				SERVER_room_broadcast(session, buffer + 1);
-				break;
-			case USER_SEND_PRIVATE_MESSAGE:
-				SERVER_send_whisper(session, buffer + 1);
-				break;
-			case HELP:
-				SERVER_help(session, buffer + 1);
-				break;
-			case LIST_ROOMS:
-				SERVER_list(session, buffer + 1);
-				break;
-			default:
-				SERVER_send_message(sock, "INVALID COMMAND!");
-		}
+		if (!strstr(buffer, USER_SEND_MESSAGE_TO_ROOM))
+			SERVER_room_broadcast(session, 
+					buffer + strlen(USER_SEND_MESSAGE_TO_ROOM));
 
+		else if (!strstr(buffer, "\\leave"))
+			SERVER_leave_room(session, buffer + 1);
+
+		else if (!strstr(buffer, "\\join"))
+			SERVER_join_room(session, buffer + 1);
+
+		else if (!strstr(buffer, "\\quit")) 
+			SERVER_session_disconnect(session);
+
+		else if (!strstr(buffer, "\\create"))
+			SERVER_create_room(session, buffer + 1);
+
+		else if (!strstr(buffer, "\\nick"))
+			SERVER_new_user(session, buffer + 1);
+
+		else if (!strstr(buffer, "\\ls"))
+			SERVER_list(session, buffer + 1);
+
+		else if (!strstr(buffer, "\\help"))
+			SERVER_help(session, buffer + 1);
+
+		else if (!strstr(buffer, "\\whisper"))
+			SERVER_send_whisper(session, buffer + 1);
+
+		else if (SERVER_invalid_command(buffer))
+			SERVER_send_message(sock, "INVALID COMMAND!");
+		else 
+			SERVER_send_message(sock, "INVALID COMMAND!");
 	}
 
-end:
 	SERVER_session_disconnect(session);
 	pthread_exit(0);
 } 
@@ -264,6 +264,18 @@ int SERVER_help(SESSION *session, char *buffer) {
 }
 
 int SERVER_list(SESSION *session, char *buffer) {
+	return 0;
+}
+
+int SERVER_session_disconnect(SESSION *session) {
+	return 0;
+}
+
+int SERVER_send_message(int socket, char *buffer) {
+	return 0;
+}
+
+int SERVER_invalid_command(char *buffer) {
 	return 0;
 }
 

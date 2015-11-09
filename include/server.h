@@ -25,7 +25,9 @@ extern SERVER *server;
 SERVER *SERVER_new(short family, unsigned short port, 
 		USER *admin);
 
-int SERVER_send_message(int socket, char *buffer);
+// POST-REFACTORING
+
+
 
 int SERVER_new_user(SESSION *session, char *buffer);
 
@@ -45,7 +47,11 @@ int SERVER_list(SESSION *session, char *buffer);
 
 int SERVER_session_disconnect(SESSION *session);
 
-// FUNDAMENTAL
+int SERVER_send_message(int socket, char *buffer);
+
+int SERVER_invalid_command(char *buffer);
+
+// PRE-REFACTORING
 
 void SERVER_show_rooms(int socket);
 

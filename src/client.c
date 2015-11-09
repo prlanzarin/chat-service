@@ -24,7 +24,6 @@ WINDOW *welcome;
 pthread_t input_thread, listen_thread;
 
 int main(int argc, char *argv[]) {
-	char buffer[MAX_MESSAGE_SIZE];
 	UI_init(top, bottom);
 
 	// Client session start 
@@ -47,8 +46,8 @@ int main(int argc, char *argv[]) {
 		exit(EXIT_FAILURE);
 	}
 
-	pthread_join(&listen_thread, NULL);
-	pthread_join(&input_thread, NULL);
+	pthread_join(listen_thread, NULL);
+	pthread_join(input_thread, NULL);
 
 	endwin();
 	return 0; 
