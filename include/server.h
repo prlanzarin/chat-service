@@ -10,6 +10,17 @@
 #define MAX_SESSIONS 20
 #define BACKLOG_CONNECTIONS 4
 
+char HELP_STR[MAX_MESSAGE_SIZE] = "\n"
+" \\quit: leaves the chat \n"
+" \\create <room name> = creates a room \n"
+" \\join <room name> = joins a room \n"
+" \\leave <room name> = leaves a room \n"
+" \\send <message> = broadcasts a message to the room \n"
+" \\whisper <who> <message> = sends a message to user 'who' \n"
+" \\ls = list all available rooms \n"
+" \\nick = changes/define a new nickname \n"
+" \\help = shows this \n";
+
 size_t SOCKADDR_IN_SIZE = sizeof(struct sockaddr_in);
 
 typedef struct server {

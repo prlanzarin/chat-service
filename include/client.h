@@ -9,6 +9,7 @@
 
 void *read_message();
 void *send_message();
+int write_to_socket(int sock, char *buffer);
 void chooseRoom();
 void getAvailableRooms();
 void clear_command_input();

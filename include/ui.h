@@ -28,9 +28,4 @@ void UI_clear_window(WINDOW *window);
 void UI_write_on_window(WINDOW *window, char *buffer, int row, int col);
 
 void UI_read_from(WINDOW *window, char *buffer, int row, int col, size_t size);
-
-/*
-
-
-*/
 #endif

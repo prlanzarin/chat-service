@@ -33,9 +33,9 @@ unsigned char *char_serialize(unsigned char *buffer, char c) {
  * in the buffer, be careful)
  */
 unsigned char *int_serialize(unsigned char *buffer, int n) {
-	buffer[2] = n >> 8;
-	buffer[3] = n;
-	return (buffer + sizeof(int));
+	buffer[0] = n >> 8;
+	buffer[1] = n;
+	return (buffer + (sizeof(int)/2));
 }
 
 /* deserializes an unsigned buffer byte into an char (there's no boundary checking

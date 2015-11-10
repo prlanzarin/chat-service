@@ -7,6 +7,16 @@
 
 pthread_mutex_t scr_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+
+void clear_command_input(WINDOW *window, int row, int col)
+{
+	pthread_mutex_lock(&scr_mutex);
+	mvwprintw(window, row, col, "                           ");
+	//mvwprintw(window, chatInRow, 45, "                           ");
+	wrefresh(window);
+	pthread_mutex_unlock(&scr_mutex);
+}
+
 void UI_init(WINDOW *top, WINDOW *bottom) {
 	initscr();		
 	getmaxyx(stdscr, UI_MAXY, UI_MAXX);
@@ -59,14 +69,36 @@ void UI_clear_window(WINDOW *window) {
 void UI_write_on_window(WINDOW *window, char *buffer, int row, int col) {
 	pthread_mutex_lock(&scr_mutex);
 	mvwprintw(window, row, col, buffer); 
+	wrefresh(window);
 	pthread_mutex_unlock(&scr_mutex);
 }
 
 void UI_read_from(WINDOW *window, char *buffer, int row, int col, size_t size) {
-	fflush(stdin);	
 	pthread_mutex_lock(&scr_mutex);
 	mvwgetnstr(window, row, col, buffer, size);
 	pthread_mutex_unlock(&scr_mutex);
-	fflush(stdin);
+	clear_command_input(window, row, 45);
 }
+
+/*
+void clear_last_line()
+{
+	pthread_mutex_lock(&scrMutex);
+	//clears last line of the screen
+	mvwprintw(welcome, 22, 2, "                                                                            ");
+	wrefresh(welcome);
+	pthread_mutex_unlock(&scrMutex);
+	return;
+}
+
+
+void clear_chat_input()
+{
+	pthread_mutex_lock(&scrMutex);
+	mvwprintw(welcome, welcomeRow, 45, "                           ");
+	wrefresh(welcome);
+	pthread_mutex_unlock(&scrMutex);
+
+}
+*/
 

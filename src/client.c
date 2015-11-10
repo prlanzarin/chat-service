@@ -19,12 +19,10 @@ pthread_mutex_t scrMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t chatMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t writeMutex = PTHREAD_MUTEX_INITIALIZER;
 WINDOW *top; WINDOW *bottom;
-WINDOW *welcome;
 
 pthread_t input_thread, listen_thread;
 
 int main(int argc, char *argv[]) {
-	char sendbuffer[MAX_MESSAGE_SIZE];
 	UI_init(top, bottom);
 
 	// Client session start 
@@ -64,6 +62,7 @@ void *send_message()
 	memset(sendbuffer, 0, MAX_USER_COMMAND);	
 
 	while(1) {
+
 		memset(sendbuffer, 0, MAX_MESSAGE_SIZE);
 		UI_read_from(bottom, sendbuffer, chatInRow, CHAT_INPUT_COLUMN,
 				MAX_MESSAGE_SIZE);
@@ -72,24 +71,25 @@ void *send_message()
 		{
 			// Broadcasts a message to room
 			pthread_mutex_lock(&writeMutex);
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);
+			write_to_socket(session->socket_descriptor, sendbuffer);
 			pthread_mutex_unlock(&writeMutex);
 			UI_redraw_window(bottom, '|', '+');
 		}
 		else if (strstr(sendbuffer, USER_LEAVE_ROOM))
 		{
 			// Leaves room
-			pthread_mutex_lock(&writeMutex);
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);
-			pthread_mutex_unlock(&writeMutex);
 			UI_redraw_window(top, '|', '+');
 			UI_redraw_window(bottom, '|', '+');
+	
+			pthread_mutex_lock(&writeMutex);
+			write_to_socket(session->socket_descriptor, sendbuffer);
+			pthread_mutex_unlock(&writeMutex);
 		}
 		else if (strstr(sendbuffer, USER_JOIN_ROOM))
 		{			
 			// Joins room
 			pthread_mutex_lock(&writeMutex);
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1); 
+			write_to_socket(session->socket_descriptor, sendbuffer); 
 			pthread_mutex_unlock(&writeMutex);
 
 		}
@@ -105,14 +105,13 @@ void *send_message()
 		{
 			// Creates room
 			pthread_mutex_lock(&writeMutex);
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);	
+			write_to_socket(session->socket_descriptor, sendbuffer);
 			pthread_mutex_unlock(&writeMutex);
 		}
 		else if (strstr(sendbuffer, USER_NICKNAME))
 		{
-			clear_command_input();
 			pthread_mutex_lock(&writeMutex);			
-			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);	
+			write_to_socket(session->socket_descriptor, sendbuffer);
 			pthread_mutex_unlock(&writeMutex);
 		}
 		else if (strstr(sendbuffer, LIST_ROOMS)) {
@@ -122,7 +121,6 @@ void *send_message()
 
 		}
 		else {
-		
 			//Redraws the window
 			UI_redraw_window(top, '|', '+');
 			UI_redraw_window(bottom, '|', '+');
@@ -132,7 +130,20 @@ void *send_message()
 	pthread_exit(0);
 }
 
-
+int write_to_socket(int sock, char *buffer) {
+	int m_size = 0; 
+	m_size = strlen(buffer) + 1;
+	if((write(sock, &m_size, sizeof(int))) < sizeof(int)) {
+		fprintf(stderr, "ERROR: could no write on socket\n");
+		return -1;
+	}
+	if(write(sock, buffer, strlen(buffer) + 1) > 0 )  //All the bytes have been sent
+		return 0;
+	else {
+		fprintf(stderr, "ERROR: could no write on socket %d\n", sock);
+		return -1;
+	}
+}
 
 /*
  * Connection Startup - Greetings & choose nickname
@@ -140,34 +151,46 @@ void *send_message()
  */	
 void *read_message()
 {
-	char buffer[MAX_MESSAGE_SIZE];
-
+	char buffer[MAX_MESSAGE_SIZE], *ptr;
+	int m_size = 0; int rec = 0;
 	while(1)
 	{	
 		memset(buffer,0,sizeof(buffer));				
-		if(read(session->socket_descriptor, buffer, MAX_MESSAGE_SIZE) > 0);
-		{	
-			//writes the message received in the terminal
-			UI_write_on_window(top, buffer, chatRow, 3);
-			//scrolls the top if the line number exceeds height
-			pthread_mutex_lock(&chatMutex);
-			if(chatRow != (UI_MAXY/2 - 2))
-				chatRow++;
-			else
-				scroll(top);
-			pthread_mutex_unlock(&chatMutex);
+		m_size = 0; rec = 0;
+		rec = read(session->socket_descriptor, &m_size, sizeof(int));
+		if(rec < 0)  // read failure
+			goto end;	
+		if(rec == 0) //end of connection
+			goto end;
+
+		ptr = buffer;
+		while(m_size > 0) {
+			rec = read(session->socket_descriptor, ptr, 
+					m_size); 
+			if(rec < 0)  // read failure
+				goto end;	
+			if(rec == 0) //end of connection
+				goto end;
+			ptr = ptr + rec;
+			m_size = m_size - rec;
+
 		}
+		//writes the message received in the terminal
+		UI_write_on_window(top, buffer, chatRow, 3);
+		//scrolls the top if the line number exceeds height
+		pthread_mutex_lock(&chatMutex);
+		if(chatRow != (UI_MAXY/2 - 2))
+			chatRow++;
+		else
+			scroll(top);
+		pthread_mutex_unlock(&chatMutex);
 	}
+end:
+	fprintf(stderr, "ERROR: could not read from server");
+	endwin();
+	exit(EXIT_FAILURE);
+
 	pthread_exit(0);
-}
-
-
-void clear_command_input()
-{
-	pthread_mutex_lock(&scrMutex);
-	mvwprintw(bottom, chatInRow, 45, "                           ");
-	wrefresh(bottom);
-	pthread_mutex_unlock(&scrMutex);
 }
 
 /*

@@ -1,7 +1,7 @@
 #ifndef __message__
 #define __message__
 
-#define MAX_MESSAGE_SIZE 1024
+#define MAX_MESSAGE_SIZE 4096
 
 #define QUIT "\\quit"
 #define ROOM_CREATION "\\create"
@@ -19,6 +19,7 @@
 #define LIST_ROOMS "\\ls"
 #define USER_NICKNAME "\\nick"
 #define ROOM_LISTING "\\ls"
+
 
 struct message {
         int op; // operation ID. It'll define how data will be deserialized
