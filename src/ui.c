@@ -28,8 +28,8 @@ void UI_set_window(WINDOW *window, int x, int y, int posy, int posx,
 }
 
 void UI_set_chat(WINDOW *bottom, WINDOW *top, int x, int y) {
-	UI_set_window(top, y/2, x, 0, 0, 1, '|', '+'); 
-	UI_set_window(bottom, y/2, x, y/2, 0, 1, '|', '+');
+	UI_set_window(top, y, x, 0, 0, 1, '|', '+'); 
+	UI_set_window(bottom, y, x, y/2, 0, 1, '|', '+');
 	pthread_mutex_lock(&scr_mutex);
 	/* TODO SCROLL SET */
 	wsetscrreg(top, 1, UI_MAXY/2-2);

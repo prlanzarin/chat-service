@@ -88,7 +88,8 @@ void *connection_handler(void *in)
 
 	//Send some messages to the client
 	message = "	Hello! Type \\nick <name> to enter your name:";
-	SERVER_send_message(sock, message);
+	if (!SERVER_send_message(sock, message))
+		fprintf(stderr, "ERROR: could not send message to client.");
 	while(1) {
 		memset(buffer, 0, sizeof(buffer));
 		inc_size = read(sock, &msg_size, sizeof(int));
@@ -113,32 +114,32 @@ void *connection_handler(void *in)
 			ptr = ptr + inc_size;
 		}
 
-		if (!strstr(buffer, USER_SEND_MESSAGE_TO_ROOM))
+		if (strstr(buffer, USER_SEND_MESSAGE_TO_ROOM))
 			SERVER_room_broadcast(session, 
 					buffer + strlen(USER_SEND_MESSAGE_TO_ROOM));
 
-		else if (!strstr(buffer, USER_LEAVE_ROOM))
+		else if (strstr(buffer, USER_LEAVE_ROOM))
 			SERVER_leave_room(session, buffer + strlen(USER_LEAVE_ROOM));
 
-		else if (!strstr(buffer, USER_JOIN_ROOM))
+		else if (strstr(buffer, USER_JOIN_ROOM))
 			SERVER_join_room(session, buffer + strlen(USER_JOIN_ROOM));
 
-		else if (!strstr(buffer, QUIT)) 
+		else if (strstr(buffer, QUIT)) 
 			SERVER_session_disconnect(session);
 
-		else if (!strstr(buffer, ROOM_CREATION))
+		else if (strstr(buffer, ROOM_CREATION))
 			SERVER_create_room(session, buffer + strlen(ROOM_CREATION));
 
-		else if (!strstr(buffer, USER_NICKNAME))
+		else if (strstr(buffer, USER_NICKNAME))
 			SERVER_new_user(session, buffer + strlen(USER_NICKNAME));
 
-		else if (!strstr(buffer, ROOM_LISTING))
+		else if (strstr(buffer, ROOM_LISTING))
 			SERVER_list(session, buffer + strlen(ROOM_LISTING));
 
-		else if (!strstr(buffer, HELP))
+		else if (strstr(buffer, HELP))
 			SERVER_help(session, buffer + strlen(HELP));
 
-		else if (!strstr(buffer, USER_SEND_PRIVATE_MESSAGE)) 
+		else if (strstr(buffer, USER_SEND_PRIVATE_MESSAGE)) 
 			SERVER_send_whisper(session, 
 					buffer + strlen(USER_SEND_PRIVATE_MESSAGE));
 
@@ -274,7 +275,10 @@ int SERVER_session_disconnect(SESSION *session) {
 }
 
 int SERVER_send_message(int socket, char *buffer) {
-	return 0;
+	if(write(socket, buffer, strlen(buffer)) == strlen(buffer))	 //All the bytes have been sent
+		return 1;
+	else
+		return 0;
 }
 
 int SERVER_invalid_command(char *buffer) {

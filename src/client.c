@@ -24,6 +24,7 @@ WINDOW *welcome;
 pthread_t input_thread, listen_thread;
 
 int main(int argc, char *argv[]) {
+	char sendbuffer[MAX_MESSAGE_SIZE];
 	UI_init(top, bottom);
 
 	// Client session start 
@@ -67,7 +68,7 @@ void *send_message()
 		UI_read_from(bottom, sendbuffer, chatInRow, CHAT_INPUT_COLUMN,
 				MAX_MESSAGE_SIZE);
 
-		if (!strstr(sendbuffer, USER_SEND_MESSAGE_TO_ROOM))
+		if (strstr(sendbuffer, USER_SEND_MESSAGE_TO_ROOM))
 		{
 			// Broadcasts a message to room
 			pthread_mutex_lock(&writeMutex);
@@ -75,7 +76,7 @@ void *send_message()
 			pthread_mutex_unlock(&writeMutex);
 			UI_redraw_window(bottom, '|', '+');
 		}
-		else if (!strstr(sendbuffer, USER_LEAVE_ROOM))
+		else if (strstr(sendbuffer, USER_LEAVE_ROOM))
 		{
 			// Leaves room
 			pthread_mutex_lock(&writeMutex);
@@ -84,7 +85,7 @@ void *send_message()
 			UI_redraw_window(top, '|', '+');
 			UI_redraw_window(bottom, '|', '+');
 		}
-		else if (!strstr(sendbuffer, USER_JOIN_ROOM))
+		else if (strstr(sendbuffer, USER_JOIN_ROOM))
 		{			
 			// Joins room
 			pthread_mutex_lock(&writeMutex);
@@ -92,7 +93,7 @@ void *send_message()
 			pthread_mutex_unlock(&writeMutex);
 
 		}
-		else if (!strstr(sendbuffer, QUIT)) 
+		else if (strstr(sendbuffer, QUIT)) 
 		{
 			// just close everything pls
 			endwin();			
@@ -100,27 +101,28 @@ void *send_message()
 			exit(1);
 
 		}
-		else if (!strstr(sendbuffer, ROOM_CREATION))
+		else if (strstr(sendbuffer, ROOM_CREATION))
 		{
 			// Creates room
 			pthread_mutex_lock(&writeMutex);
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);	
 			pthread_mutex_unlock(&writeMutex);
 		}
-		else if (!strstr(sendbuffer, USER_NICKNAME))
+		else if (strstr(sendbuffer, USER_NICKNAME))
 		{
 			clear_command_input();
 			pthread_mutex_lock(&writeMutex);			
 			write(session->socket_descriptor, sendbuffer, strlen(sendbuffer)+1);	
 			pthread_mutex_unlock(&writeMutex);
 		}
-		else if (!strstr(sendbuffer, LIST_ROOMS)) {
+		else if (strstr(sendbuffer, LIST_ROOMS)) {
 
 		}
-		else if (!strstr(sendbuffer, HELP)) {
+		else if (strstr(sendbuffer, HELP)) {
 
 		}
 		else {
+		
 			//Redraws the window
 			UI_redraw_window(top, '|', '+');
 			UI_redraw_window(bottom, '|', '+');

@@ -47,7 +47,7 @@ int SESSION_connect(SESSION *session) {
 		fprintf(stderr, "ERROR: could not open client socket\n");
 		return -1;
 	}
-	printf("SESSION SOCKET %d WAS OPENED.\n", session->socket_descriptor);
+	//printf("SESSION SOCKET %d WAS OPENED.\n", session->socket_descriptor);
 
 	if(connect(session->socket_descriptor, 
 				(struct sockaddr *)&session->server,
