@@ -9,7 +9,7 @@
 pthread_mutex_t usr_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 USER *USER_create(char *name, int password) {
-	USER *new =  calloc(sizeof(USER), 1);
+	USER *new = (USER *)malloc(sizeof(USER)); 
 	if (!new)
 	{
 		fprintf(stderr, "ERROR: user creation failed.\n");
@@ -17,10 +17,10 @@ USER *USER_create(char *name, int password) {
 	}
 	else
 	{
-		//TODO: user id
 		strncpy(new->name, name, sizeof(new->name));
-		new->password = password;
+		new->set = 0;
 		new->in_chat = 0;
+		new->room = NULL;
 		return new;
 	}	
 }
@@ -50,6 +50,16 @@ int USER_leave_room(USER *user) {
 	user->room = NULL;
 	pthread_mutex_unlock(&usr_mutex);
 	return -1;
+}
+
+int USER_quit(USER *user) {
+	pthread_mutex_lock(&usr_mutex);
+	user->in_chat = 0;
+	user->room = NULL;
+	user->set = 0;
+	memset(user->name, 0, MAX_USER_NAME);
+	pthread_mutex_unlock(&usr_mutex);
+	return 0;
 }
 
 int USER_send_message_to_room(USER *user, MESSAGE *msg, ROOM *room) {

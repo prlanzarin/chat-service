@@ -25,4 +25,7 @@ int SESSION_set(SESSION *session, short family, unsigned short port,
                 char *hostname, unsigned short server_port, USER *user); 
 
 int SESSION_connect(SESSION *session); 
+
+int SESSION_disconnect(SESSION *session); 
+
 #endif

@@ -21,10 +21,10 @@ ROOM *ROOM_create(char *name, USER *creator) {
 	}
 	else
 	{
+		pthread_mutex_lock(&roomMutex);		
 		strncpy(new->name, name, sizeof(new->name));
 		new->room_admin = creator;
 		new->online_users = NULL;
-		pthread_mutex_lock(&roomMutex);		
 		pthread_mutex_unlock(&roomMutex);
 		return new;
 	}	
@@ -48,16 +48,9 @@ int ROOM_close(int room_id, LIST *rooms) {
 	return -1;
 }
 
-// TODO FUNDAMENTAL
-int ROOM_broadcast_message(ROOM *room, char *msg, int session_socket) {
-	
-	return -1;
-}
-
-// TODO 
 int ROOM_kick_user(ROOM *room, USER *user) {
 	pthread_mutex_lock(&roomMutex);
-	LIST_remove((room->online_users), (LIST *) user);
+	LIST_remove_user((room->online_users), (LIST *) user);
 	USER_leave_room(user);
 	pthread_mutex_unlock(&roomMutex);
 	return 1;

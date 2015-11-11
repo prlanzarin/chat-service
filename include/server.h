@@ -7,7 +7,8 @@
 #include "session.h"
 #include "message.h"
 
-#define MAX_SESSIONS 20
+#define MAX_SESSIONS 20 
+#define MAX_ROOMS 256
 #define BACKLOG_CONNECTIONS 4
 
 char HELP_STR[MAX_MESSAGE_SIZE] = "\n"
@@ -38,15 +39,13 @@ SERVER *SERVER_new(short family, unsigned short port,
 
 // POST-REFACTORING
 
-
-
 int SERVER_new_user(SESSION *session, char *buffer);
 
 int SERVER_create_room(SESSION *session, char *buffer);
 
 int SERVER_join_room(SESSION *session, char *buffer);
 
-int SERVER_leave_room(SESSION *session, char *buffer);
+int SERVER_leave_room(SESSION *session);
 
 int SERVER_room_broadcast(SESSION *session, char *buffer);
 
@@ -54,7 +53,7 @@ int SERVER_send_whisper(SESSION *session, char *buffer);
 
 int SERVER_help(SESSION *session, char *buffer);
 
-int SERVER_list(SESSION *session, char *buffer);
+int SERVER_list(SESSION *session);
 
 int SERVER_session_disconnect(SESSION *session);
 
@@ -63,14 +62,6 @@ int SERVER_send_message(int socket, char *buffer);
 int SERVER_invalid_command(char *buffer);
 
 // PRE-REFACTORING
-
-void SERVER_show_rooms(int socket);
-
-int SERVER_change_user_name(char *user_name, char *new_name);
-
-void SERVER_process_user_cmd (int socket, char *userName);
-
-int SERVER_checkRoomExists (char *roomName);
 
 USER *SERVER_get_user_by_name(char *userName);
 

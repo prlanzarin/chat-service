@@ -4,21 +4,6 @@
 #include <string.h>
 #include "../include/message.h"
 
-/* LISTED CLIENT OPERATIONS:
- * ROOM_CREATION (any user) // TODO URGENT
- * ROOM_DELETION (room admin) // TODO URGENT
- * USER_JOIN_ROOM (any user) // TODO URGENT
- * USER_LEAVE_ROOM (any room participant) // TODO URGENT
- * USER_SEND_MESSAGE_TO_ROOM (any room participant -> room) // TODO URGENT
- * USER_SEND_PRIVATE_MESSAGE (any user -> any user) // TODO URGENT
-
- * ROOM_ADD_USER (any room participant) // TODO
- * ROOM_KICK_USER (admin) // TODO
- * SESSION_CREATE_USER (any session) // TODO
- * SESSION_USER_LOGIN (any session) // TODO
- * USER_LOGOFF (any user) // TODO
- */
-
 /* non-module subroutines for basic types (de)serialization */
 
 /* serializes a char into an unsigned buffer (there's no boundary checking
@@ -51,7 +36,6 @@ unsigned char *char_deserialize(unsigned char *buffer, char *c) {
  */
 unsigned char *int_deserialize(unsigned char *buffer, int *n) {
 	memcpy(n, buffer, sizeof(int));
-	printf("DES %d\n", *n);
 	return (buffer + sizeof(int));
 }
 

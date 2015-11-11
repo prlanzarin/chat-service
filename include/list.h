@@ -17,4 +17,6 @@ LIST *LIST_push(LIST *head, void *new_node);
 
 int LIST_remove(LIST *head, LIST *node);
 
+int LIST_remove_user(LIST *head, LIST *node);
+
 #endif

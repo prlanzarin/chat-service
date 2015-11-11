@@ -4,6 +4,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <unistd.h>
 #include "../include/session.h"
 
 SESSION *SESSION_new(short family, unsigned short port, char *hostname, 
@@ -22,12 +23,15 @@ int SESSION_set(SESSION *session, short family, unsigned short port,
 		char *hostname, unsigned short server_port, USER *user) {
 
 	struct hostent *s_host;
-	
+
 	session->client_socket.sin_family = family;
 	session->client_socket.sin_addr.s_addr = INADDR_ANY;
 	session->client_socket.sin_port = htons(port); // htons -> endianess
 	session->valid = 0;
-	session->user = user;
+	session->user = (USER *)malloc(sizeof(USER));
+	session->user->set = 0;
+	session->user->in_chat = 0;
+
 	/* Server adressing.
 	 * The "localhost" can be changed to get the name (or IP number) of the
 	 * host from the command line . This is for testing purposes only */
@@ -60,3 +64,10 @@ int SESSION_connect(SESSION *session) {
 	return 0;
 }
 
+int SESSION_disconnect(SESSION *session) {
+	close(session->socket_descriptor);
+	session->socket_descriptor = -1;
+	session->valid = 0;
+	USER_quit(session->user);
+	return 0;
+}

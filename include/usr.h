@@ -12,9 +12,8 @@
 
 /* USER STRUCTURE */
 typedef struct user {
-        int id;
         char name[MAX_USER_NAME];
-        int password;
+        int set;
         int in_chat;
         ROOM *room;
 } USER;
@@ -35,5 +34,7 @@ int USER_leave_room(USER *user);
 int USER_send_message_to_room(USER *user, MESSAGE *msg, ROOM *room);
 
 int USER_send_private_message(USER *from, USER *to, MESSAGE *message);
+
+int USER_quit(USER *user);
 
 #endif

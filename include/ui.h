@@ -19,7 +19,7 @@ void UI_init(WINDOW *top, WINDOW *bottom);
 void UI_set_window(WINDOW *window, int x, int y, int posy, int posx,
 		int scroll, char sides, char ceiling);
 
-void UI_set_chat(WINDOW *bottom, WINDOW *top, int x, int y);
+void UI_set_chat(WINDOW *top, WINDOW *bottom, int y, int x);
 
 void UI_redraw_window(WINDOW *window, char sides, char ceiling);
 
