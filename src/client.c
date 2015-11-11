@@ -22,20 +22,15 @@ WINDOW *top; WINDOW *bottom;
 pthread_t input_thread, listen_thread;
 
 int main(int argc, char *argv[]) {
-	//	UI_init(top, bottom);
 	// INIT TOP AND BOTTOM WINDOWS 
 	initscr();		
 	getmaxyx(stdscr, UI_MAXY2, UI_MAXX2);
 	curs_set(2);
-	top = newwin(UI_MAXY2/2, UI_MAXX2, 0, 0);
-	bottom = newwin(UI_MAXY2/2, UI_MAXX2, UI_MAXY2/2, 0);
-	box(top, '|', '+'); 
+	top = newwin(UI_MAXY2-3, UI_MAXX2, 0, 0);
+	bottom = newwin(3, UI_MAXX2, UI_MAXY2-3, 0);
 	box(bottom, '|', '+'); 
 	scrollok(top, TRUE);
-	idlok(top, TRUE);
 	scrollok(bottom, TRUE);
-	wsetscrreg(top, 1, UI_MAXY2-2);
-	wsetscrreg(bottom, 1, UI_MAXY2-2);
 
 	// Client session start 
 	session = SESSION_new(AF_INET, PORT, SERVER_HOSTNAME, PORT, NULL);
@@ -44,13 +39,13 @@ int main(int argc, char *argv[]) {
 		printf ("ERROR: could not create session.");
 		return -1;
 	}
-
+	// Listener
 	if(pthread_create(&listen_thread, NULL, read_message, NULL) < 0) 
 	{
 		perror("ERROR: client message reading thread could not be created.");
 		exit(EXIT_FAILURE);
 	}
-
+	// Sender
 	if(pthread_create(&input_thread, NULL, send_message, NULL) < 0)
 	{
 		perror("ERROR: client message sending thread could not be created.");
@@ -76,34 +71,29 @@ void *send_message()
 	while(1) {
 
 		memset(sendbuffer, 0, sizeof(sendbuffer));
-		//UI_read_from(bottom, sendbuffer, chatInRow, CHAT_INPUT_COLUMN,
-		//		MAX_MESSAGE_SIZE);
 
 		pthread_mutex_lock(&scr_mutex2);
 		mvwprintw(bottom, chatInRow, CHAT_INPUT_COLUMN, "> ");
+			pthread_mutex_unlock(&scr_mutex2);
+		// Command parsing
 		wgetnstr(bottom, sendbuffer, MAX_MESSAGE_SIZE-2);
+		// Bottom refresh
+		pthread_mutex_lock(&scr_mutex2);
+		wclear(bottom);
+		box(bottom, '|', '+'); 
+		wprintw(bottom, "> ");
+		wrefresh(bottom);
 		pthread_mutex_unlock(&scr_mutex2);
 
 		if (strstr(sendbuffer, QUIT) != NULL) {
 			// just close everything 
 			goto end;
 		}
+		// Send to server
 		pthread_mutex_lock(&writeMutex);
-
 		if(write_to_socket(session->socket_descriptor, sendbuffer) < 0)
 			goto end;
 		pthread_mutex_unlock(&writeMutex);
-
-		pthread_mutex_lock(&scr_mutex2);
-		wclear(bottom);
-		box(top, '|', '+'); 
-		box(bottom, '|', '+'); 
-		wprintw(bottom, "> ");
-		wsetscrreg(top, 1, UI_MAXY2-2);
-		wsetscrreg(bottom, 1, UI_MAXY2-2);
-		wrefresh(top);
-		wrefresh(bottom);
-		pthread_mutex_unlock(&scr_mutex2);
 
 	}
 end:
@@ -112,6 +102,7 @@ end:
 	exit(0);
 }
 
+/* Sends a message <buffer> through socket <sock> */
 int write_to_socket(int sock, char *buffer) {
 	int m_size = 0; 
 	m_size = strlen(buffer) + 1;
@@ -141,11 +132,6 @@ void *read_message()
 		memset(buffer,0,sizeof(buffer));				
 		m_size = 0; 
 
-		pthread_mutex_lock(&scr_mutex2);	
-		wrefresh(top);
-		wrefresh(bottom);
-		pthread_mutex_unlock(&scr_mutex2);
-
 		int rec = read(session->socket_descriptor, &m_size, sizeof(int));
 		if(rec < 0)  // read failure
 			goto end;	
@@ -162,14 +148,11 @@ void *read_message()
 				goto end;
 			ptr = ptr + rec;
 			m_size = m_size - rec;
-			mvwprintw(bottom, 3, 1, buffer);
 		}
 
 		pthread_mutex_lock(&scr_mutex2);
 		wprintw(top, "\n ");
 		wprintw(top, buffer);
-		wprintw(top, "\n ");
-		box(top, '|', '+');
 		wrefresh(top);
 		pthread_mutex_unlock(&scr_mutex2);
 

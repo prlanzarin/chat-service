@@ -113,6 +113,8 @@ void *connection_handler(void *in)
 
 		printf("SERVER_MESSAGE_INC: received \" %s\" from %d\n", 
 				buffer, session->socket_descriptor);
+
+		// Main operation decoupling
 		if (strstr(buffer, USER_SEND_MESSAGE_TO_ROOM) != NULL)
 			SERVER_room_broadcast(session, 
 					buffer + strlen(USER_SEND_MESSAGE_TO_ROOM));
@@ -153,6 +155,7 @@ void *connection_handler(void *in)
 	pthread_exit(0);
 } 
 
+// Changes nickname or sets a new user
 int SERVER_new_user(SESSION *session, char *buffer) {
 	char *snd_buf = malloc(sizeof(MAX_MESSAGE_SIZE));
 	if(USER_change_name(session->user, buffer) < 0)
@@ -165,11 +168,13 @@ int SERVER_new_user(SESSION *session, char *buffer) {
 	return 0;
 }
 
+// Sends a message <buffer> to socket
 int SERVER_send_message(int socket, char *buffer) {
 	int m_size = 0; 
 
 	pthread_mutex_lock(&socketw_mutex);
 	m_size = strlen(buffer) + 1;
+
 	// sending message size to client
 	if(write(socket, &m_size, sizeof(int)) < sizeof(int)) {
 		fprintf(stderr, "ERROR: could not write on socket %d\n", socket);
@@ -192,10 +197,11 @@ int SERVER_send_message(int socket, char *buffer) {
 
 }
 
+// Creates a room named <buffer> within the server
 int SERVER_create_room(SESSION *session, char *buffer) {
 	ROOM *new_room = SERVER_get_room_by_name(buffer);
 	pthread_mutex_lock(&roomListMutex);
-	if (new_room == NULL)
+	if (new_room == NULL) // There's no room named <buffer in the server
 	{
 		ROOM *new_room = ROOM_create(buffer, session->user);	
 		if(new_room == NULL) {
@@ -212,7 +218,7 @@ int SERVER_create_room(SESSION *session, char *buffer) {
 		pthread_mutex_unlock(&roomListMutex);
 		return 0;
 	}
-	else
+	else	// The room <buffer> already exists within the server
 	{
 		fprintf(stderr, "ERROR: room name already exists");
 		SERVER_send_message(session->socket_descriptor, "[SERVER] ROOM ALREADY EXISTS");
@@ -225,6 +231,7 @@ int SERVER_create_room(SESSION *session, char *buffer) {
 	return 0;
 }
 
+// Session <session>'s user joins the room named <buffer>
 int SERVER_join_room(SESSION *session, char *buffer) {
 	ROOM *new_room = SERVER_get_room_by_name(buffer);
 
@@ -240,15 +247,16 @@ int SERVER_join_room(SESSION *session, char *buffer) {
 		return -1;
 	}
 
-	ROOM_add_user(new_room, session->user);
 	char *snd_buf = malloc(sizeof(char) * MAX_MESSAGE_SIZE);
 	strncpy(snd_buf, session->user->name, MAX_USER_NAME);
 	strncat(snd_buf, " joined the room!", MAX_MESSAGE_SIZE);
-	SERVER_room_broadcast(session, snd_buf);
+	SERVER_send_message(session->socket_descriptor, snd_buf);
+	ROOM_add_user(new_room, session->user);
 
 	return 0;
 }
 
+// <session>'s user leaves the room it's currently in
 int SERVER_leave_room(SESSION *session) {
 	ROOM *new_room = session->user->room;
 
@@ -268,14 +276,16 @@ int SERVER_leave_room(SESSION *session) {
 	strncpy(snd_buf, session->user->name, MAX_USER_NAME);
 	strncat(snd_buf, " has left the room!", MAX_MESSAGE_SIZE);
 	SERVER_room_broadcast(session, snd_buf);
-
 	ROOM_kick_user(new_room, session->user);
 
 	return 0;
 }
 
+// Broadcast message <buffer> to all users participating in <session>'s user
+// room
 int SERVER_room_broadcast(SESSION *session, char *buffer) {
 	SESSION *session_ptr = NULL;
+	// Invalid session
 	if(session->user == NULL) {
 		SERVER_send_message(session->socket_descriptor, 
 				"[SERVER] PLEASE, SET YOUR NAME FIRST!");
@@ -285,15 +295,13 @@ int SERVER_room_broadcast(SESSION *session, char *buffer) {
 		return 0;
 	}
 
+	// User is not in chat (doesnt make sense)
 	if(!session->user->in_chat) {
-		SERVER_send_message(session->socket_descriptor, 
-				"[SERVER] YOU'RE NOT IN A ROOM!");
-		fprintf(stderr, "[SERVER] NOT IN A ROOM!\n");
 		pthread_mutex_unlock(&roomListMutex);
 		return 0;
 	}
 
-
+	// Everything's allright
 	ROOM *room = session->user->room;
 	LIST *users = room->online_users;
 	USER *user = (USER *) (users->node);
@@ -306,12 +314,13 @@ int SERVER_room_broadcast(SESSION *session, char *buffer) {
 				MAX_USER_NAME));
 	strncat(snd_buf, " said: ", strlen(" said: "));
 	strncat(snd_buf, buffer, strnlen(buffer, MAX_MESSAGE_SIZE));
-
+	// Message broadcasting to room members
 	while (users)
 	{
 		user = (USER *) (users->node);
 		session_ptr = SERVER_get_session_by_user(user->name);
-		SERVER_send_message(session_ptr->socket_descriptor, snd_buf);
+		if(user->in_chat)
+			SERVER_send_message(session_ptr->socket_descriptor, snd_buf);
 		users = users->next; 
 	}
 
@@ -319,15 +328,18 @@ int SERVER_room_broadcast(SESSION *session, char *buffer) {
 	return 0;
 }
 
+// TODO
 int SERVER_send_whisper(SESSION *session, char *buffer) {
 	return 0;
 }
 
+// Sends a help message to <session>, explaining possible commands
 int SERVER_help(SESSION *session, char *buffer) {
 	SERVER_send_message(session->socket_descriptor, HELP_STR);
 	return 0;
 }
 
+// List, to <session>, the currently available rooms in the server
 int SERVER_list(SESSION *session) {
 	LIST *rooms = server->rooms;
 	ROOM *check;
@@ -348,12 +360,14 @@ int SERVER_list(SESSION *session) {
 	return 0;
 }
 
+// Ends a session
 int SERVER_session_disconnect(SESSION *session) {
 	SESSION_disconnect(session);
 	return 0;
 }
+
 int SERVER_invalid_command(char *buffer) {
-	return 0;
+	return 1;
 }
 
 /*

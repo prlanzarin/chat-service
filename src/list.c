@@ -48,12 +48,12 @@ int LIST_remove(LIST *head, LIST *node)
 int LIST_remove_user(LIST *head, LIST *node)
 {
 	pthread_mutex_lock(&lst_mutex);
-	USER *u1, *u2, *target;
-	u1 = (USER *) head; u2 = (USER *) head->next;
+	USER *u2, *target;
+	u2 = (USER *) head->next;
 	target = (USER *)node;
 	while(head->next && strcmp(u2->name, target->name)) {
 		head = head->next;
-		u1 = (USER *) head; u2 = (USER *) head->next;
+		u2 = (USER *) head->next;
 	}
 	if(head->next) {
 		head->next = node->next;
